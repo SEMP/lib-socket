@@ -8,6 +8,22 @@ package py.com.semp.lib.socket.configuration;
 public interface Values
 {
 	/**
+	 * Contains constant values
+	 * 
+	 * @author Sergio Morel
+	 */
+	public interface Constants
+	{
+		//Integer values
+		/**
+		 * Represents the "any" IP address, which typically indicates that a server 
+		 * should listen on all available IP addresses on the host. This IP address
+		 * is not intended to be used for routing.
+		 */
+		public static final String INET_ADDRESS_ANY = "0.0.0.0";
+	}
+	
+	/**
 	 * Contains variable names
 	 * 
 	 * @author Sergio Morel
@@ -59,6 +75,7 @@ public interface Values
 	 */
 	public interface Defaults
 	{
+		//Integer values
 		public static final Integer CONNECTION_TIMEOUT_MS = 5000;
 		public static final Integer READ_TIMEOUT_MS = 1000;
 	}
