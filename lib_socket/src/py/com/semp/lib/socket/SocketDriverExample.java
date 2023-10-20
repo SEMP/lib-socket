@@ -19,7 +19,7 @@ import py.com.semp.lib.utilidades.exceptions.CommunicationException;
 /**
  * Clase de ejemplo
  */
-public class SocketDriver implements DataInterface, DataReceiver, DataTransmitter
+public class SocketDriverExample implements DataInterface, DataReceiver, DataTransmitter
 {
 	
 	private Socket socket;
