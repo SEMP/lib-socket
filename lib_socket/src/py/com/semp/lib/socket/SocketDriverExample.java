@@ -158,23 +158,23 @@ public class SocketDriverExample implements DataInterface, DataReceiver, DataTra
 	}
 	
 	@Override
-	public void addDataListeners(DataListener... listeners)
+	public SocketDriverExample addDataListeners(DataListener... listeners)
 	{
 		// TODO Auto-generated method stub
-		
+		return this;
 	}
 	
 	@Override
-	public void removeDataListeners(DataListener... listeners)
+	public SocketDriverExample removeDataListeners(DataListener... listeners)
 	{
 		// TODO Auto-generated method stub
-		
+		return this;
 	}
 	
 	@Override
-	public void removeAllDataListeners()
+	public SocketDriverExample removeAllDataListeners()
 	{
 		// TODO Auto-generated method stub
-		
+		return this;
 	}
 }
