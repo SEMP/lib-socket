@@ -1,9 +1,17 @@
 package py.com.semp.lib.socket;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketException;
+import java.time.Instant;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -21,13 +29,14 @@ import py.com.semp.lib.utilidades.exceptions.CommunicationException;
 
 public class SocketDriver implements DataInterface, DataReceiver, DataTransmitter
 {
-	private final ReentrantLock lock = new ReentrantLock();
+	private final ReentrantLock socketLock = new ReentrantLock();
 	private Socket socket;
 	private SocketConfiguration configurationValues;
 	private final CopyOnWriteArraySet<DataListener> dataListeners = new CopyOnWriteArraySet<>();
 	private final CopyOnWriteArraySet<ConnectionEventListener> connectionEventListeners = new CopyOnWriteArraySet<>();
 	private volatile AtomicBoolean connected = new AtomicBoolean(false);
-	private String stringIdentifier;
+	private volatile String stringIdentifier;
+	private final ExecutorService executorService = Executors.newFixedThreadPool(Values.Constants.SOCKET_LISTENERS_THREAD_POOL_SIZE);
 	
 	public SocketDriver() throws CommunicationException
 	{
@@ -59,7 +68,7 @@ public class SocketDriver implements DataInterface, DataReceiver, DataTransmitte
 			throw new NullPointerException(errorMessage);
 		}
 		
-		this.lock.lock();
+		this.socketLock.lock();
 		
 		try
 		{
@@ -74,7 +83,7 @@ public class SocketDriver implements DataInterface, DataReceiver, DataTransmitte
 		}
 		finally
 		{
-			this.lock.unlock();
+			this.socketLock.unlock();
 		}
 	}
 	
@@ -127,8 +136,61 @@ public class SocketDriver implements DataInterface, DataReceiver, DataTransmitte
 	@Override
 	public void sendData(byte[] data) throws CommunicationException
 	{
-		// TODO Auto-generated method stub
+		if(!this.isConnected())
+		{
+			String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getStringIdentifier());
+			
+			throw new CommunicationException(errorMessage);
+		}
 		
+		this.socketLock.lock();
+		
+		try
+		{
+			if(!this.isConnected())
+			{
+				String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getStringIdentifier());
+				
+				throw new CommunicationException(errorMessage);
+			}
+			
+			OutputStream outputStream = this.socket.getOutputStream();
+			
+			outputStream.write(data);
+			outputStream.flush();
+			
+			this.informSent(data);
+		}
+		catch(IOException e)
+		{
+			this.disconnect();
+			
+			String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_SEND_DATA_ERROR, this.getStringIdentifier());
+			
+			throw new CommunicationException(errorMessage, e);
+		}
+		finally
+		{
+			this.socketLock.unlock();
+		}
+	}
+	
+	private void informSent(byte[] data)
+	{
+		this.executorService.submit(() ->
+		{
+			for(DataListener listener : this.dataListeners)
+			{
+				try
+				{
+					listener.onDataSent(Instant.now(), this, data);
+				}
+				catch(Exception e)
+				{
+					//TODO add the error to the log.
+				}
+			}
+		});
 	}
 	
 	@Override
@@ -212,10 +274,33 @@ public class SocketDriver implements DataInterface, DataReceiver, DataTransmitte
 	}
 	
 	@Override
-	public DataInterface setConfigurationValues(ConfigurationValues configurationValues) throws CommunicationException
+	public SocketDriver setConfigurationValues(ConfigurationValues configurationValues) throws CommunicationException
 	{
-		// TODO Auto-generated method stub
-		return null;
+		this.checkConfigurationValues(configurationValues);
+		
+		this.configurationValues = (SocketConfiguration) configurationValues;
+		
+		return this;
+	}
+	
+	private void checkConfigurationValues(ConfigurationValues configurationValues) throws CommunicationException
+	{
+		if(!(configurationValues instanceof SocketConfiguration))
+		{
+			String requiredClassName = SocketConfiguration.class.getName();
+			String currentClassName = this.getClass().getName();
+			
+			String errorMessage = MessageUtil.getMessage(Messages.WRONG_CONFIGURATION_OBJECT_ERROR, requiredClassName, currentClassName);
+			
+			throw new CommunicationException(errorMessage);
+		}
+		
+		if(!configurationValues.checkRequiredParameters())
+		{
+			String errorMessage = MessageUtil.getMessage(Messages.REQUIRED_CONFIGURATION_VALUE_NOT_FOUND_ERROR);
+			
+			throw new CommunicationException(errorMessage.toString());
+		}
 	}
 	
 	@Override
@@ -279,8 +364,57 @@ public class SocketDriver implements DataInterface, DataReceiver, DataTransmitte
 	@Override
 	public String getStringIdentifier()
 	{
-		// TODO Auto-generated method stub
-		return null;
+		if(this.stringIdentifier == null)
+		{
+			SocketAddress remoteAddress = this.getRemoteAddress();
+			SocketAddress localAddress = this.getLocalAddress();
+			
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append("L[").append(getAddressString(localAddress)).append("]");
+			sb.append("<->");
+			sb.append("R[").append(getAddressString(remoteAddress)).append("]");
+			
+			this.stringIdentifier = sb.toString();
+		}
+		
+		return this.stringIdentifier;
+	}
+	
+	public SocketAddress getRemoteAddress()
+	{
+		return this.socket.getRemoteSocketAddress();
+	}
+	
+	public SocketAddress getLocalAddress()
+	{
+		return this.socket.getLocalSocketAddress();
+	}
+	
+	public static String getAddressString(SocketAddress socketAddress)
+	{
+		if(socketAddress instanceof InetSocketAddress)
+		{
+			InetSocketAddress inetSocketAddress = (InetSocketAddress)socketAddress;
+			
+			InetAddress address = inetSocketAddress.getAddress();
+			int port = inetSocketAddress.getPort();
+			
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append(address.getHostAddress());
+			sb.append(":");
+			sb.append(port);
+			
+			return sb.toString();
+		}
+		
+		if(socketAddress == null)
+		{
+			return null;
+		}
+		
+		return socketAddress.toString();
 	}
 	
 	@Override

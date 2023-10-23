@@ -14,6 +14,12 @@ public interface Values
 	 */
 	public interface Constants
 	{
+		//Integer values
+		/**
+		 * The size of the thread pool used to inform the socket listeners of the events.
+		 */
+		public static final int SOCKET_LISTENERS_THREAD_POOL_SIZE = 10; 
+		
 		//String values
 		/**
 		 * Represents the "any" IP address, which typically indicates that a server 
