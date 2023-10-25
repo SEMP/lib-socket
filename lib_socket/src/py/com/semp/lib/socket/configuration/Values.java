@@ -22,6 +22,11 @@ public interface Values
 		
 		//String values
 		/**
+		 * Context name for the socket library
+		 */
+		public static final String SOCKET_CONTEXT = "lib_socket";
+		
+		/**
 		 * Represents the "any" IP address, which typically indicates that a server 
 		 * should listen on all available IP addresses on the host. This IP address
 		 * is not intended to be used for routing.

@@ -26,9 +26,13 @@ import py.com.semp.lib.utilidades.communication.listeners.ConnectionEventListene
 import py.com.semp.lib.utilidades.communication.listeners.DataListener;
 import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
 import py.com.semp.lib.utilidades.exceptions.CommunicationException;
+import py.com.semp.lib.utilidades.log.Logger;
+import py.com.semp.lib.utilidades.utilities.Factory;
 
 public class SocketDriver implements DataInterface, DataReceiver, DataTransmitter
 {
+	private static final Logger LOGGER = Factory.getLogger(Values.Constants.SOCKET_CONTEXT);
+	
 	private final ReentrantLock socketLock = new ReentrantLock();
 	private Socket socket;
 	private SocketConfiguration configurationValues;
@@ -187,7 +191,9 @@ public class SocketDriver implements DataInterface, DataReceiver, DataTransmitte
 				}
 				catch(Exception e)
 				{
-					//TODO add the error to the log.
+					String errorMessage = MessageUtil.getMessage(Messages.LISTENER_THROWN_EXCEPTION_ERROR, listener.getClass().getName());
+					
+					LOGGER.warning(errorMessage, e);
 				}
 			}
 		});
