@@ -15,7 +15,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
-import py.com.semp.lib.log.utilities.LoggerManager;
 import py.com.semp.lib.socket.configuration.SocketConfiguration;
 import py.com.semp.lib.socket.configuration.Values;
 import py.com.semp.lib.socket.internal.MessageUtil;
@@ -28,6 +27,7 @@ import py.com.semp.lib.utilidades.communication.listeners.DataListener;
 import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
 import py.com.semp.lib.utilidades.exceptions.CommunicationException;
 import py.com.semp.lib.utilidades.log.Logger;
+import py.com.semp.lib.utilidades.log.LoggerManager;
 
 public class SocketDriver implements DataInterface, DataReceiver, DataTransmitter
 {

@@ -115,11 +115,4 @@ public interface Values
 	 * @author Sergio Morel
 	 */
 	public static interface Utilities extends py.com.semp.lib.utilidades.configuration.Values {}
-	
-	/**
-	 * Contains the value of constants from the Logs library.
-	 * 
-	 * @author Sergio Morel
-	 */
-	public static interface Logs extends py.com.semp.lib.log.configuration.Values {}
 }
