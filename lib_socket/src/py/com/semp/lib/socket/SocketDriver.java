@@ -22,6 +22,7 @@ import py.com.semp.lib.socket.internal.Messages;
 import py.com.semp.lib.utilidades.communication.DataInterface;
 import py.com.semp.lib.utilidades.communication.DataReceiver;
 import py.com.semp.lib.utilidades.communication.DataTransmitter;
+import py.com.semp.lib.utilidades.communication.ShutdownHookAction;
 import py.com.semp.lib.utilidades.communication.listeners.ConnectionEventListener;
 import py.com.semp.lib.utilidades.communication.listeners.DataListener;
 import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
@@ -33,6 +34,7 @@ public class SocketDriver implements DataInterface, DataReceiver, DataTransmitte
 {
 	private static final Logger LOGGER = LoggerManager.getLogger(Values.Constants.SOCKET_CONTEXT);
 	
+	private final Thread shutdownHook = new Thread(new ShutdownHookAction(this));
 	private final ReentrantLock socketLock = new ReentrantLock();
 	private Socket socket;
 	private SocketConfiguration configurationValues;
@@ -52,6 +54,18 @@ public class SocketDriver implements DataInterface, DataReceiver, DataTransmitte
 		super();
 		
 		this.setSocket(socket);
+		
+		this.addShutdownHook();
+	}
+	
+	private void addShutdownHook()
+	{
+		Runtime.getRuntime().addShutdownHook(this.shutdownHook);
+	}
+	
+	private void removeShutdownHook()
+	{
+		Runtime.getRuntime().removeShutdownHook(this.shutdownHook);
 	}
 	
 	private void setSocket(Socket socket) throws CommunicationException
@@ -272,11 +286,163 @@ public class SocketDriver implements DataInterface, DataReceiver, DataTransmitte
 		return null;
 	}
 	
+//	@Override
+//	public SocketDriver disconnect() throws CommunicationException
+//	{
+//		this.socketLock.lock();
+//		
+//		try
+//		{
+//			this.connected.set(false);
+//			
+//			this.informDisconnected();
+//			
+//			this.executorService.shutdown();
+//			
+//			if(this.socket != null)
+//			{
+//				if(!this.socket.isClosed())
+//				{
+//					this.socket.shutdownOutput();
+//				}
+//			}
+//		}
+//		catch(IOException e)
+//		{
+//			String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTING_ERROR, this.getStringIdentifier());
+//			
+//			throw new CommunicationException(errorMessage, e);
+//		}
+//		finally
+//		{
+//			try
+//			{
+//				this.socket.close();
+//			}
+//			catch(IOException e)
+//			{
+//				String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTING_ERROR, this.getStringIdentifier());
+//				
+//				throw new CommunicationException(errorMessage, e);
+//			}
+//			finally
+//			{
+//				this.socketLock.unlock();
+//			}
+//		}
+//		
+//		return this;
+//	}
+	
 	@Override
-	public DataInterface disconnect() throws CommunicationException
+	public SocketDriver disconnect() throws CommunicationException
 	{
-		// TODO Auto-generated method stub
-		return null;
+		this.socketLock.lock();
+		
+		IOException suppressedException = null;
+		
+		try
+		{
+			this.connected.set(false);
+			this.informDisconnected();
+			this.executorService.shutdown();
+			
+			if(this.socket != null && !this.socket.isClosed())
+			{
+				this.socket.shutdownOutput();
+			}
+		}
+		catch(IOException e)
+		{
+			suppressedException = e;
+		}
+		finally
+		{
+			try
+			{
+				if(this.socket != null)
+				{
+					this.socket.close();
+					this.removeShutdownHook();
+				}
+			}
+			catch(IOException e)
+			{
+				String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTING_ERROR, this.getStringIdentifier());
+				
+				if(suppressedException != null)
+				{
+					suppressedException.addSuppressed(e);
+					
+					throw new CommunicationException(errorMessage, suppressedException);
+				}
+				else
+				{
+					throw new CommunicationException(errorMessage, e);
+				}
+			}
+			finally
+			{
+				this.socketLock.unlock();
+			}
+			
+			if(suppressedException != null)
+			{
+				String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTING_ERROR, this.getStringIdentifier());
+				
+				throw new CommunicationException(errorMessage, suppressedException);
+			}
+		}
+		
+		return this;
+	}
+	
+	public SocketDriver shutdown() throws CommunicationException
+	{
+		this.socketLock.lock();
+		
+		try
+		{
+			this.executorService.shutdownNow();
+			
+			if(this.socket != null && !this.socket.isClosed())
+			{
+				this.socket.close();
+				this.removeShutdownHook();
+			}
+		}
+		catch(IOException e)
+		{
+			String errorMessage = MessageUtil.getMessage(Messages.SHUTDOWN_ERROR, this.getStringIdentifier());
+			
+			throw new CommunicationException(errorMessage, e);
+		}
+		finally
+		{
+			this.socketLock.unlock();
+		}
+		
+		return this;
+	}
+	
+	private void informDisconnected()
+	{
+		this.executorService.submit(() ->
+		{
+			for(ConnectionEventListener listener : this.connectionEventListeners)
+			{
+				try
+				{
+					listener.onDisconnect(Instant.now(), this);
+				}
+				catch(Exception e)
+				{
+					String errorMessage = MessageUtil.getMessage(Messages.LISTENER_THROWN_EXCEPTION_ERROR, listener.getClass().getName());
+					
+					LOGGER.warning(errorMessage, e);
+				}
+			}
+		});
 	}
 	
 	@Override

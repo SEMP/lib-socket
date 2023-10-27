@@ -177,4 +177,11 @@ public class SocketDriverExample implements DataInterface, DataReceiver, DataTra
 		// TODO Auto-generated method stub
 		return this;
 	}
+
+	@Override
+	public DataInterface shutdown() throws CommunicationException
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
