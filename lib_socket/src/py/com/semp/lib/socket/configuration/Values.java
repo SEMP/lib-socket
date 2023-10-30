@@ -18,7 +18,12 @@ public interface Values
 		/**
 		 * The size of the thread pool used to inform the socket listeners of the events.
 		 */
-		public static final int SOCKET_LISTENERS_THREAD_POOL_SIZE = 10; 
+		public static final int SOCKET_LISTENERS_THREAD_POOL_SIZE = 10;
+		
+		/**
+		 * Time delay for checking if the connection was established.
+		 */
+		public static final int CONNECTION_POLL_DELAY_MS = 50;
 		
 		//String values
 		/**

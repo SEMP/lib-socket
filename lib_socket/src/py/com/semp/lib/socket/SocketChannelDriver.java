@@ -281,10 +281,11 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 			
 			String address = this.configurationValues.getValue(Values.VariableNames.REMOTE_ADDRESS);
 			int port = this.configurationValues.getValue(Values.VariableNames.REMOTE_PORT);
+			int connectionTimeout = this.configurationValues.getValue(Values.VariableNames.CONNECTION_TIMEOUT_MS);
 			
 			this.socketChannel.configureBlocking(false);
 			
-			this.waitConnection(new InetSocketAddress(address, port));
+			this.waitConnection(new InetSocketAddress(address, port), connectionTimeout * 1000000L);
 			
 			this.getStringIdentifier();
 			this.informConnected();
@@ -302,16 +303,91 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 		return this;
 	}
 	
-	private SocketChannelDriver waitConnection(InetSocketAddress address) throws CommunicationException
+	private void waitConnection(InetSocketAddress address, long timeoutNano) throws CommunicationException
 	{
-		//TODO terminar
-		return this;
+		long start = System.nanoTime();
+		
+		try
+		{
+			boolean connected = this.socketChannel.connect(address);
+			
+			if(!connected)
+			{
+				while(!this.socketChannel.finishConnect())
+				{
+					if(this.shuttingDown)
+					{
+						String methodName = "void SocketChannelDriver::waitConnection(InetSocketAddress)";
+						
+						String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
+						
+						throw new CommunicationException(errorMessage);
+					}
+					
+					if(System.nanoTime() - start >= timeoutNano)
+					{
+						String errorMessage = MessageUtil.getMessage(Messages.CONNECTING_TIMOUT_ERROR, this.configurationValues.toString());
+						
+						throw new CommunicationException(errorMessage);
+					}
+					
+					try
+					{
+						Thread.sleep(Values.Constants.CONNECTION_POLL_DELAY_MS);
+					}
+					catch(InterruptedException e)
+					{
+						Thread.currentThread().interrupt();
+						
+						String errorMessage = MessageUtil.getMessage(Messages.CONNECTING_ERROR, this.configurationValues.toString());
+						
+						throw new CommunicationException(errorMessage, e);
+					}
+				}
+			}
+		}
+		catch(IOException e)
+		{
+			String errorMessage = MessageUtil.getMessage(Messages.CONNECTING_ERROR, this.configurationValues.toString());
+			
+			throw new CommunicationException(errorMessage, e);
+		}
 	}
 	
 	private void informConnected()
 	{
-		// TODO Auto-generated method stub
-		
+		try
+	    {
+	        this.executorService.submit(() ->
+	        {
+	            for(ConnectionEventListener listener : this.connectionEventListeners)
+	            {
+	                if(this.shuttingDown)
+	                {
+	                    return;
+	                }
+	                
+	                try
+	                {
+	                    listener.onConnect(Instant.now(), this);
+	                }
+	                catch(RuntimeException e)
+	                {
+	                    String errorMessage = MessageUtil.getMessage(Messages.LISTENER_THROWN_EXCEPTION_ERROR, listener.getClass().getName());
+	                    
+	                    LOGGER.warning(errorMessage, e);
+	                }
+	            }
+	        });
+	    }
+	    catch(RejectedExecutionException e)
+	    {
+			String methodName = "void SocketChannelDriver::informDisconnected()";
+			
+	        String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
+	        
+	        LOGGER.debug(errorMessage, e);
+	    }
 	}
 
 	@Override
