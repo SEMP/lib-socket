@@ -23,7 +23,7 @@ public interface Values
 		/**
 		 * Time delay for checking if the connection was established.
 		 */
-		public static final int CONNECTION_POLL_DELAY_MS = 50;
+		public static final int POLL_DELAY_MS = 50;
 		
 		//String values
 		/**
@@ -72,6 +72,11 @@ public interface Values
 		 */
 		public static final String READ_TIMEOUT_MS = "readTimeoutMS";
 		
+		/**
+		 * The time the socket will block during a read operation before throwing an exception.<br>
+		 */
+		public static final String SOCKET_BUFFER_SIZE_BYTES = "socketBufferSizeBytes";
+		
 		// String Variable Names
 		/**
 		 * The address of the remote host.
@@ -99,6 +104,7 @@ public interface Values
 		//Integer values
 		public static final Integer CONNECTION_TIMEOUT_MS = 5000;
 		public static final Integer READ_TIMEOUT_MS = 1000;
+		public static final Integer SOCKET_BUFFER_SIZE_BYTES = 1024 * 2;
 	}
 	
 	/**

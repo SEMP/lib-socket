@@ -43,6 +43,7 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 	private final ExecutorService executorService = Executors.newFixedThreadPool(Values.Constants.SOCKET_LISTENERS_THREAD_POOL_SIZE);
 	private final ReentrantLock socketLock = new ReentrantLock();
 	private volatile boolean shuttingDown = false;
+	private ByteBuffer readBuffer;
 	
 	public SocketChannelDriver() throws CommunicationException
 	{
@@ -248,10 +249,127 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 	@Override
 	public byte[] readData() throws CommunicationException
 	{
-		// TODO Auto-generated method stub
-		return null;
+		ByteBuffer buffer = this.getReadBuffer();
+		
+		int readTimeout = this.configurationValues.getValue(Values.VariableNames.READ_TIMEOUT_MS);
+		
+		long start = System.nanoTime();
+		long timeoutNano = readTimeout * 1000000L;
+		
+		
+		int bytesRead = 0;
+		
+		while(bytesRead == 0)
+		{
+			if(this.shuttingDown)
+			{
+				String methodName = "byte[] SocketChannelDriver::readData()";
+				
+				String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
+				
+				throw new CommunicationException(errorMessage);
+			}
+			
+			if(System.nanoTime() - start >= timeoutNano)
+			{
+				String errorMessage = MessageUtil.getMessage(Messages.READING_TIMOUT_ERROR, this.configurationValues.toString());
+				
+				throw new CommunicationException(errorMessage);
+			}
+			
+			try
+			{
+				bytesRead = this.socketChannel.read(buffer);
+			}
+			catch(IOException e)
+			{
+				String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_RECEIVE_DATA_ERROR, this.getStringIdentifier());
+				
+				throw new CommunicationException(errorMessage, e);
+			}
+			
+			try
+			{
+				Thread.sleep(Values.Constants.POLL_DELAY_MS);
+			}
+			catch(InterruptedException e)
+			{
+				Thread.currentThread().interrupt();
+				
+				String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_RECEIVE_DATA_ERROR, this.getStringIdentifier());
+				
+				throw new CommunicationException(errorMessage, e);
+			}
+		}
+		
+		if(bytesRead == -1)
+		{
+			String errorMessage = MessageUtil.getMessage(Messages.END_OF_STREAM_REACHED, this.getStringIdentifier());
+			
+			throw new CommunicationException(errorMessage);
+		}
+		
+		buffer.flip();
+		
+		byte[] data = new byte[bytesRead];
+		
+		buffer.get(data);
+		
+		this.informReceived(data);
+		
+		return data;
 	}
 	
+	private ByteBuffer getReadBuffer()
+	{
+		int bufferSize = this.configurationValues.getValue(Values.VariableNames.SOCKET_BUFFER_SIZE_BYTES);
+		
+		if(this.readBuffer == null || this.readBuffer.capacity() < bufferSize)
+		{
+			this.readBuffer = ByteBuffer.allocate(bufferSize);
+		}
+		
+		this.readBuffer.clear();
+		
+		return this.readBuffer;
+	}
+	
+	private void informReceived(byte[] data)
+	{
+		try
+	    {
+	        this.executorService.submit(() ->
+	        {
+	        	for(DataListener listener : this.dataListeners)
+	            {
+	                if(this.shuttingDown)
+	                {
+	                    return;
+	                }
+	                
+	                try
+	                {
+	                	listener.onDataReceived(Instant.now(), this, data);
+	                }
+	                catch(RuntimeException e)
+	                {
+	                    String errorMessage = MessageUtil.getMessage(Messages.LISTENER_THROWN_EXCEPTION_ERROR, listener.getClass().getName());
+	                    
+	                    LOGGER.warning(errorMessage, e);
+	                }
+	            }
+	        });
+	    }
+	    catch(RejectedExecutionException e)
+	    {
+			String methodName = "void SocketChannelDriver::informSent(byte[])";
+			
+	        String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
+	        
+	        LOGGER.debug(errorMessage, e);
+	    }
+	}
+
 	@Override
 	public SocketChannelDriver connect() throws CommunicationException
 	{
@@ -333,7 +451,7 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 					
 					try
 					{
-						Thread.sleep(Values.Constants.CONNECTION_POLL_DELAY_MS);
+						Thread.sleep(Values.Constants.POLL_DELAY_MS);
 					}
 					catch(InterruptedException e)
 					{
@@ -382,7 +500,7 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 	    }
 	    catch(RejectedExecutionException e)
 	    {
-			String methodName = "void SocketChannelDriver::informDisconnected()";
+			String methodName = "void SocketChannelDriver::informConnected()";
 			
 	        String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
 	        
