@@ -1,6 +1,7 @@
 package py.com.semp.lib.socket.configuration;
 
 import py.com.semp.lib.socket.SocketChannelDriver;
+import py.com.semp.lib.socket.exceptions.ConnectionClosedException;
 import py.com.semp.lib.utilidades.exceptions.CommunicationException;
 
 public class Borrar
@@ -19,13 +20,17 @@ public class Borrar
 		
 		while(socket.isConnected())
 		{
-			byte[] readData = socket.readData();
-			
-			System.out.println(new String(readData));
-			
 			try
 			{
+				byte[] readData = socket.readData();
+				
+				System.out.print(new String(readData));
+				
 				Thread.sleep(Values.Constants.POLL_DELAY_MS);
+			}
+			catch(ConnectionClosedException e)
+			{
+				break;
 			}
 			catch(InterruptedException e)
 			{

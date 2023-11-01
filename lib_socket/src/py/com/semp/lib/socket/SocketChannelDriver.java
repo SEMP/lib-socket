@@ -16,6 +16,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import py.com.semp.lib.socket.configuration.SocketConfiguration;
 import py.com.semp.lib.socket.configuration.Values;
+import py.com.semp.lib.socket.exceptions.ConnectionClosedException;
+import py.com.semp.lib.socket.exceptions.CommunicationTimeoutException;
 import py.com.semp.lib.socket.internal.MessageUtil;
 import py.com.semp.lib.socket.internal.Messages;
 import py.com.semp.lib.utilidades.communication.DataInterface;
@@ -114,10 +116,15 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 	@Override
 	public void sendData(byte[] data) throws CommunicationException
 	{
+		int writeTimeout = this.configurationValues.getValue(Values.VariableNames.WRITE_TIMEOUT_MS);
+		long start = System.nanoTime();
+		long timeoutNano = writeTimeout * 1000000L;
+		
 		if(!this.socketChannel.isConnected())
 		{
 			String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getStringIdentifier());
-			throw new CommunicationException(errorMessage);
+			
+			throw new ConnectionClosedException(errorMessage);
 		}
 		
 		if(data == null || data.length == 0)
@@ -132,18 +139,30 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 			if(!this.socketChannel.isConnected())
 			{
 				String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getStringIdentifier());
-				throw new CommunicationException(errorMessage);
+				
+				throw new ConnectionClosedException(errorMessage);
 			}
 			
 			ByteBuffer buffer = ByteBuffer.wrap(data);
 			
-			LOGGER.debug("Sending (" + this.getStringIdentifier() + "): " + ArrayUtils.toHexaArrayString(data));
+			LOGGER.debug(String.format("Sending %d bytes (%s): %s", data.length, this.getStringIdentifier(), ArrayUtils.toHexaArrayString(data))); //"Sending (" + this.getStringIdentifier() + "): " + ArrayUtils.toHexaArrayString(data));
 			
 			while(buffer.hasRemaining())
 			{
 				if(this.shuttingDown)
 				{
-					return;
+					String methodName = "byte[] SocketChannelDriver::readData()";
+					
+					String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
+					
+					throw new CommunicationException(errorMessage);
+				}
+				
+				if(timeoutNano >= 0 && System.nanoTime() - start >= timeoutNano)
+				{
+					String errorMessage = MessageUtil.getMessage(Messages.WRITTING_TIMOUT_ERROR, data.length, this.configurationValues.toString());
+					
+					throw new CommunicationTimeoutException(errorMessage);
 				}
 				
 				int bytesWritten = socketChannel.write(buffer);
@@ -151,6 +170,7 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 				if(bytesWritten < 0)
 				{
 					String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_SEND_DATA_ERROR, this.getStringIdentifier());
+					
 					throw new CommunicationException(errorMessage);
 				}
 			}
@@ -160,6 +180,7 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 		catch(IOException e)
 		{
 			String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_SEND_DATA_ERROR, this.getStringIdentifier());
+			
 			throw new CommunicationException(errorMessage, e);
 		}
 		finally
@@ -252,10 +273,8 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 		ByteBuffer buffer = this.getReadBuffer();
 		
 		int readTimeout = this.configurationValues.getValue(Values.VariableNames.READ_TIMEOUT_MS);
-		
 		long start = System.nanoTime();
 		long timeoutNano = readTimeout * 1000000L;
-		
 		
 		int bytesRead = 0;
 		
@@ -274,7 +293,7 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 			{
 				String errorMessage = MessageUtil.getMessage(Messages.READING_TIMOUT_ERROR, this.configurationValues.toString());
 				
-				throw new CommunicationException(errorMessage);
+				throw new CommunicationTimeoutException(errorMessage);
 			}
 			
 			try
@@ -306,7 +325,7 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 		{
 			String errorMessage = MessageUtil.getMessage(Messages.END_OF_STREAM_REACHED, this.getStringIdentifier());
 			
-			throw new CommunicationException(errorMessage);
+			throw new ConnectionClosedException(errorMessage);
 		}
 		
 		buffer.flip();
@@ -389,7 +408,7 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 			{
 				String errorMessage = MessageUtil.getMessage(Messages.ALREADY_CONNECTED_ERROR, this.getStringIdentifier());
 				
-				throw new CommunicationException(errorMessage);
+				throw new ConnectionClosedException(errorMessage);
 			}
 			
 			if(this.socketChannel == null)
@@ -406,11 +425,13 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 			this.waitConnection(new InetSocketAddress(address, port), connectionTimeout * 1000000L);
 			
 			this.getStringIdentifier();
+			
 			this.informConnected();
 		}
 		catch(IOException e)
 		{
 			String errorMessage = MessageUtil.getMessage(Messages.CONNECTING_ERROR, this.configurationValues.toString());
+			
 			throw new CommunicationException(errorMessage, e);
 		}
 		finally
@@ -446,7 +467,7 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 					{
 						String errorMessage = MessageUtil.getMessage(Messages.CONNECTING_TIMOUT_ERROR, this.configurationValues.toString());
 						
-						throw new CommunicationException(errorMessage);
+						throw new CommunicationTimeoutException(errorMessage);
 					}
 					
 					try
@@ -552,6 +573,7 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 		catch(IOException e)
 		{
 			String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTING_ERROR, this.getStringIdentifier());
+			
 			throw new CommunicationException(errorMessage, e);
 		}
 		finally
