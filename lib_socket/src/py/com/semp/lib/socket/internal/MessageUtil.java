@@ -1,8 +1,12 @@
 package py.com.semp.lib.socket.internal;
 
+import java.util.Locale;
+import java.util.ResourceBundle;
+
 import py.com.semp.lib.socket.configuration.Values;
 import py.com.semp.lib.utilidades.messages.MessageKey;
 import py.com.semp.lib.utilidades.messages.MessageManager;
+import py.com.semp.lib.utilidades.messages.MessageRetriever;
 
 /**
  * A utility class providing centralized access to message retrieval within the library.
@@ -25,15 +29,24 @@ public final class MessageUtil
 	private static final String PATH = Values.Constants.MESSAGES_PATH;
 	
 	/**
-	 * The shared instance of the MessageManager for message retrieval.
+	 * Shared instance of {@link MessageRetriever} for message retrieval.
 	 */
-	private static final MessageManager MESSAGE_MANAGER = new MessageManager(PATH, RESOURCE);
+	private static final MessageRetriever MESSAGE_RETRIEVER = new MessageRetriever()
+	{
+		@Override
+		protected MessageManager getNewMessageManager(Locale locale)
+		{
+			ResourceBundle resourceBundle = ResourceBundle.getBundle(PATH + RESOURCE, locale);
+			
+			return new MessageManager(resourceBundle);
+		}
+	};
 	
 	private MessageUtil()
 	{
 		super();
 		
-		String errorMessage = getMessage(Messages.DONT_INSTANTIATE, this.getClass().getName());
+		String errorMessage = MessageUtil.getMessage(Messages.DONT_INSTANTIATE, this.getClass().getName());
 		
 		throw new AssertionError(errorMessage);
 	}
@@ -50,7 +63,7 @@ public final class MessageUtil
 	 */
 	public static String getMessage(String messageKey, Object... arguments)
 	{
-		return MESSAGE_MANAGER.getMessage(messageKey, arguments);
+		return MESSAGE_RETRIEVER.getMessage(messageKey, arguments);
 	}
 	
 	/**
@@ -65,6 +78,17 @@ public final class MessageUtil
 	 */
 	public static String getMessage(MessageKey messageKey, Object... arguments)
 	{
-		return MESSAGE_MANAGER.getMessage(messageKey, arguments);
+		return MESSAGE_RETRIEVER.getMessage(messageKey, arguments);
+	}
+	
+	/**
+	 * Sets the locale for retrieving messages, allowing for a change in the language of the returned messages.
+	 * 
+	 * @param locale
+	 * - the new locale to set for retrieving messages.
+	 */
+	public static void setLocale(Locale locale)
+	{
+		MESSAGE_RETRIEVER.setLocale(locale);
 	}
 }

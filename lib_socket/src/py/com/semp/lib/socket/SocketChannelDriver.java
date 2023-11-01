@@ -270,7 +270,7 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 				throw new CommunicationException(errorMessage);
 			}
 			
-			if(System.nanoTime() - start >= timeoutNano)
+			if(timeoutNano >= 0 && System.nanoTime() - start >= timeoutNano)
 			{
 				String errorMessage = MessageUtil.getMessage(Messages.READING_TIMOUT_ERROR, this.configurationValues.toString());
 				
@@ -442,7 +442,7 @@ public class SocketChannelDriver implements DataInterface, DataReceiver, DataTra
 						throw new CommunicationException(errorMessage);
 					}
 					
-					if(System.nanoTime() - start >= timeoutNano)
+					if(timeoutNano >= 0 && System.nanoTime() - start >= timeoutNano)
 					{
 						String errorMessage = MessageUtil.getMessage(Messages.CONNECTING_TIMOUT_ERROR, this.configurationValues.toString());
 						
