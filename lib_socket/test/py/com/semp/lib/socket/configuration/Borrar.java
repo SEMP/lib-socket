@@ -30,6 +30,7 @@ public class Borrar
 			}
 			catch(ConnectionClosedException e)
 			{
+				System.out.print("Desconectado...");
 				break;
 			}
 			catch(InterruptedException e)

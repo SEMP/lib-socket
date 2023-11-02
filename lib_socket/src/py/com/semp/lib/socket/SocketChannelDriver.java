@@ -16,14 +16,12 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import py.com.semp.lib.socket.configuration.SocketConfiguration;
 import py.com.semp.lib.socket.configuration.Values;
-import py.com.semp.lib.socket.exceptions.ConnectionClosedException;
 import py.com.semp.lib.socket.exceptions.CommunicationTimeoutException;
+import py.com.semp.lib.socket.exceptions.ConnectionClosedException;
 import py.com.semp.lib.socket.internal.MessageUtil;
 import py.com.semp.lib.socket.internal.Messages;
-import py.com.semp.lib.utilidades.communication.DataInterface;
-import py.com.semp.lib.utilidades.communication.DataReceiver;
-import py.com.semp.lib.utilidades.communication.DataTransmitter;
 import py.com.semp.lib.utilidades.communication.ShutdownHookAction;
+import py.com.semp.lib.utilidades.communication.interfaces.DataCommunicator;
 import py.com.semp.lib.utilidades.communication.listeners.ConnectionEventListener;
 import py.com.semp.lib.utilidades.communication.listeners.DataListener;
 import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
@@ -32,7 +30,7 @@ import py.com.semp.lib.utilidades.log.Logger;
 import py.com.semp.lib.utilidades.log.LoggerManager;
 import py.com.semp.lib.utilidades.utilities.ArrayUtils;
 
-public class SocketChannelDriver implements DataInterface, DataReceiver, DataTransmitter
+public class SocketChannelDriver implements DataCommunicator
 {
 	private static final Logger LOGGER = LoggerManager.getLogger(Values.Constants.SOCKET_CONTEXT);
 	

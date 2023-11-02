@@ -107,9 +107,9 @@ public interface Values
 	public interface Defaults
 	{
 		//Integer values
-		public static final Integer CONNECTION_TIMEOUT_MS = 5000;
-		public static final Integer READ_TIMEOUT_MS = 1000;
-		public static final Integer WRITE_TIMEOUT_MS = 1000;
+		public static final Integer CONNECTION_TIMEOUT_MS = -1;
+		public static final Integer READ_TIMEOUT_MS = -1;
+		public static final Integer WRITE_TIMEOUT_MS = -1;
 		public static final Integer SOCKET_BUFFER_SIZE_BYTES = 1024 * 2;
 	}
 	

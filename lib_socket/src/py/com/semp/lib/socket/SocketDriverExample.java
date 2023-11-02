@@ -8,9 +8,9 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
-import py.com.semp.lib.utilidades.communication.DataInterface;
-import py.com.semp.lib.utilidades.communication.DataReceiver;
-import py.com.semp.lib.utilidades.communication.DataTransmitter;
+import py.com.semp.lib.utilidades.communication.interfaces.DataInterface;
+import py.com.semp.lib.utilidades.communication.interfaces.DataReceiver;
+import py.com.semp.lib.utilidades.communication.interfaces.DataTransmitter;
 import py.com.semp.lib.utilidades.communication.listeners.ConnectionEventListener;
 import py.com.semp.lib.utilidades.communication.listeners.DataListener;
 import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
