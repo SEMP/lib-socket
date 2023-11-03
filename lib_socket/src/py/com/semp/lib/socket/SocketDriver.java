@@ -603,4 +603,18 @@ public class SocketDriver implements DataInterface, DataReceiver, DataTransmitte
 		
 		return this.connected.get() && socketConnected;
 	}
+
+	@Override
+	public Set<DataListener> getDataListeners()
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Set<ConnectionEventListener> getConnectionEventListeners()
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

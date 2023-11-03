@@ -1,8 +1,8 @@
 package py.com.semp.lib.socket.configuration;
 
 import py.com.semp.lib.socket.SocketChannelDriver;
-import py.com.semp.lib.socket.exceptions.ConnectionClosedException;
 import py.com.semp.lib.utilidades.exceptions.CommunicationException;
+import py.com.semp.lib.utilidades.exceptions.ConnectionClosedException;
 
 public class Borrar
 {

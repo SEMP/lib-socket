@@ -21,7 +21,6 @@ import py.com.semp.lib.utilidades.exceptions.CommunicationException;
  */
 public class SocketDriverExample implements DataInterface, DataReceiver, DataTransmitter
 {
-	
 	private Socket socket;
 	private ConfigurationValues configurationValues;
 	private final Set<ConnectionEventListener> connectionStateListeners = new HashSet<>();
@@ -180,6 +179,20 @@ public class SocketDriverExample implements DataInterface, DataReceiver, DataTra
 
 	@Override
 	public DataInterface shutdown() throws CommunicationException
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Set<DataListener> getDataListeners()
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Set<ConnectionEventListener> getConnectionEventListeners()
 	{
 		// TODO Auto-generated method stub
 		return null;
