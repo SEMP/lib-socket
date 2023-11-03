@@ -21,6 +21,7 @@ import py.com.semp.lib.socket.internal.MessageUtil;
 import py.com.semp.lib.socket.internal.Messages;
 import py.com.semp.lib.utilidades.communication.ShutdownHookAction;
 import py.com.semp.lib.utilidades.communication.interfaces.DataCommunicator;
+import py.com.semp.lib.utilidades.communication.interfaces.DataReader;
 import py.com.semp.lib.utilidades.communication.listeners.ConnectionEventListener;
 import py.com.semp.lib.utilidades.communication.listeners.DataListener;
 import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
@@ -46,12 +47,13 @@ public class SocketChannelDriver implements DataCommunicator
 	private final ReentrantLock socketLock = new ReentrantLock();
 	private volatile boolean shuttingDown = false;
 	private ByteBuffer readBuffer;
+	private volatile DataReader dataReader;
 	
 	public SocketChannelDriver() throws CommunicationException
 	{
 		this(getNewSocketChannel());
 	}
-
+	
 	public SocketChannelDriver(SocketChannel socketChannel) throws CommunicationException
 	{
 		super();
@@ -145,7 +147,7 @@ public class SocketChannelDriver implements DataCommunicator
 			
 			ByteBuffer buffer = ByteBuffer.wrap(data);
 			
-			LOGGER.debug(String.format("Sending %d bytes (%s): %s", data.length, this.getStringIdentifier(), ArrayUtils.toHexaArrayString(data))); //"Sending (" + this.getStringIdentifier() + "): " + ArrayUtils.toHexaArrayString(data));
+			LOGGER.debug(String.format("Sending %d bytes (%s): %s", data.length, this.getStringIdentifier(), ArrayUtils.toHexaArrayString(data)));
 			
 			while(buffer.hasRemaining())
 			{
@@ -591,7 +593,7 @@ public class SocketChannelDriver implements DataCommunicator
 	{
 		this.checkConfigurationValues(configurationValues);
 		
-		this.configurationValues = (SocketConfiguration) configurationValues;
+		this.configurationValues = (SocketConfiguration)configurationValues;
 		
 		return this;
 	}
@@ -763,18 +765,45 @@ public class SocketChannelDriver implements DataCommunicator
 		
 		return this.socketChannel.isConnected();
 	}
-
+	
 	@Override
 	public Set<ConnectionEventListener> getConnectionEventListeners()
 	{
-		// TODO Auto-generated method stub
-		return null;
+		return this.connectionEventListeners;
 	}
-
+	
 	@Override
 	public Set<DataListener> getDataListeners()
 	{
-		// TODO Auto-generated method stub
-		return null;
+		return this.dataListeners;
+	}
+	
+	@Override
+	public boolean isShuttingdown()
+	{
+		return this.shuttingDown;
+	}
+	
+	@Override
+	public DataReader getDataReader()
+	{
+		if(this.dataReader == null)
+		{
+			this.socketLock.lock();
+			
+			try
+			{
+				if(this.dataReader == null)
+				{
+					this.dataReader = new SocketChannelDataReader(this);
+				}
+			}
+			finally
+			{
+				this.socketLock.unlock();
+			}
+		}
+		
+		return this.dataReader;
 	}
 }

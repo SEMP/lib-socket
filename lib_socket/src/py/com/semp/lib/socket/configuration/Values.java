@@ -70,7 +70,7 @@ public interface Values
 		/**
 		 * The time the socket will block during a read operation before throwing an exception.<br>
 		 */
-		public static final String READ_TIMEOUT_MS = "readTimeoutMS";
+		public static final String READ_TIMEOUT_MS = Values.Utilities.VariableNames.READ_TIMEOUT_MS;
 		
 		/**
 		 * The time the socket will block during a write operation before throwing an exception.<br>
