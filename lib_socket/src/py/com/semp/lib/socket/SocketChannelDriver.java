@@ -12,6 +12,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
@@ -19,6 +20,7 @@ import py.com.semp.lib.socket.configuration.SocketConfiguration;
 import py.com.semp.lib.socket.configuration.Values;
 import py.com.semp.lib.socket.internal.MessageUtil;
 import py.com.semp.lib.socket.internal.Messages;
+import py.com.semp.lib.utilidades.communication.DefaultDataReader;
 import py.com.semp.lib.utilidades.communication.ShutdownHookAction;
 import py.com.semp.lib.utilidades.communication.interfaces.DataCommunicator;
 import py.com.semp.lib.utilidades.communication.interfaces.DataReader;
@@ -31,6 +33,7 @@ import py.com.semp.lib.utilidades.exceptions.ConnectionClosedException;
 import py.com.semp.lib.utilidades.log.Logger;
 import py.com.semp.lib.utilidades.log.LoggerManager;
 import py.com.semp.lib.utilidades.utilities.ArrayUtils;
+import py.com.semp.lib.utilidades.utilities.NamedThreadFactory;
 
 public class SocketChannelDriver implements DataCommunicator
 {
@@ -43,7 +46,7 @@ public class SocketChannelDriver implements DataCommunicator
 	private final Thread shutdownHook = new Thread(new ShutdownHookAction(this));
 	private final CopyOnWriteArraySet<DataListener> dataListeners = new CopyOnWriteArraySet<>();
 	private final CopyOnWriteArraySet<ConnectionEventListener> connectionEventListeners = new CopyOnWriteArraySet<>();
-	private final ExecutorService executorService = Executors.newFixedThreadPool(Values.Constants.SOCKET_LISTENERS_THREAD_POOL_SIZE);
+	private final ExecutorService executorService = Executors.newFixedThreadPool(Values.Constants.SOCKET_LISTENERS_THREAD_POOL_SIZE, new NamedThreadFactory("SocketChannelDriverListener"));
 	private final ReentrantLock socketLock = new ReentrantLock();
 	private volatile boolean shuttingDown = false;
 	private ByteBuffer readBuffer;
@@ -126,7 +129,11 @@ public class SocketChannelDriver implements DataCommunicator
 		{
 			String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getStringIdentifier());
 			
-			throw new ConnectionClosedException(errorMessage);
+			ConnectionClosedException exception = new ConnectionClosedException(errorMessage);
+			
+			this.informOnSendingError(data, exception);
+			
+			throw exception;
 		}
 		
 		if(data == null || data.length == 0)
@@ -142,7 +149,11 @@ public class SocketChannelDriver implements DataCommunicator
 			{
 				String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getStringIdentifier());
 				
-				throw new ConnectionClosedException(errorMessage);
+				ConnectionClosedException exception = new ConnectionClosedException(errorMessage);
+				
+				this.informOnSendingError(data, exception);
+				
+				throw exception;
 			}
 			
 			ByteBuffer buffer = ByteBuffer.wrap(data);
@@ -157,14 +168,22 @@ public class SocketChannelDriver implements DataCommunicator
 					
 					String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
 					
-					throw new CommunicationException(errorMessage);
+					ConnectionClosedException exception = new ConnectionClosedException(errorMessage);
+					
+					this.informOnSendingError(data, exception);
+					
+					throw exception;
 				}
 				
 				if(timeoutNano >= 0 && System.nanoTime() - start >= timeoutNano)
 				{
 					String errorMessage = MessageUtil.getMessage(Messages.WRITTING_TIMOUT_ERROR, data.length, this.configurationValues.toString());
 					
-					throw new CommunicationTimeoutException(errorMessage);
+					ConnectionClosedException exception = new ConnectionClosedException(errorMessage);
+					
+					this.informOnSendingError(data, exception);
+					
+					throw exception;
 				}
 				
 				int bytesWritten = socketChannel.write(buffer);
@@ -173,7 +192,11 @@ public class SocketChannelDriver implements DataCommunicator
 				{
 					String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_SEND_DATA_ERROR, this.getStringIdentifier());
 					
-					throw new CommunicationException(errorMessage);
+					ConnectionClosedException exception = new ConnectionClosedException(errorMessage);
+					
+					this.informOnSendingError(data, exception);
+					
+					throw exception;
 				}
 			}
 			
@@ -183,22 +206,16 @@ public class SocketChannelDriver implements DataCommunicator
 		{
 			String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_SEND_DATA_ERROR, this.getStringIdentifier());
 			
-			throw new CommunicationException(errorMessage, e);
+			ConnectionClosedException exception = new ConnectionClosedException(errorMessage);
+			
+			this.informOnSendingError(data, exception);
+			
+			throw exception;
 		}
 		finally
 		{
 			this.socketLock.unlock();
 		}
-	}
-	
-	private void informDataSent(byte[] data)
-	{
-		String methodName = "void SocketChannelDriver::informDataSent(byte[])";
-		
-		this.notifyListeners(methodName, this.dataListeners, (listener) ->
-		{
-			listener.onDataSent(Instant.now(), this, data);
-		});
 	}
 	
 	@Override
@@ -248,60 +265,45 @@ public class SocketChannelDriver implements DataCommunicator
 	{
 		ByteBuffer buffer = this.getReadBuffer();
 		
-		int readTimeout = this.configurationValues.getValue(Values.VariableNames.READ_TIMEOUT_MS);
-		long start = System.nanoTime();
-		long timeoutNano = readTimeout * 1000000L;
-		
 		int bytesRead = 0;
 		
-		while(bytesRead == 0)
+		if(this.shuttingDown)
 		{
-			if(this.shuttingDown)
-			{
-				String methodName = "byte[] SocketChannelDriver::readData()";
-				
-				String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
-				
-				throw new CommunicationException(errorMessage);
-			}
+			String methodName = "byte[] SocketChannelDriver::readData()";
 			
-			if(timeoutNano >= 0 && System.nanoTime() - start >= timeoutNano)
-			{
-				String errorMessage = MessageUtil.getMessage(Messages.READING_TIMOUT_ERROR, this.configurationValues.toString());
-				
-				throw new CommunicationTimeoutException(errorMessage);
-			}
+			String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
 			
-			try
-			{
-				bytesRead = this.socketChannel.read(buffer);
-			}
-			catch(IOException e)
-			{
-				String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_RECEIVE_DATA_ERROR, this.getStringIdentifier());
-				
-				throw new CommunicationException(errorMessage, e);
-			}
+			CommunicationException exception = new CommunicationException(errorMessage);
 			
-			try
-			{
-				Thread.sleep(Values.Constants.POLL_DELAY_MS);
-			}
-			catch(InterruptedException e)
-			{
-				Thread.currentThread().interrupt();
-				
-				String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_RECEIVE_DATA_ERROR, this.getStringIdentifier());
-				
-				throw new CommunicationException(errorMessage, e);
-			}
+			this.informOnReceivingError(exception);
+			
+			throw exception;
+		}
+		
+		try
+		{
+			bytesRead = this.socketChannel.read(buffer);
+		}
+		catch(IOException e)
+		{
+			String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_RECEIVE_DATA_ERROR, this.getStringIdentifier());
+			
+			CommunicationException exception = new CommunicationException(errorMessage, e);
+			
+			this.informOnReceivingError(exception);
+			
+			throw exception;
 		}
 		
 		if(bytesRead == -1)
 		{
 			String errorMessage = MessageUtil.getMessage(Messages.END_OF_STREAM_REACHED, this.getStringIdentifier());
 			
-			throw new ConnectionClosedException(errorMessage);
+			ConnectionClosedException exception = new ConnectionClosedException(errorMessage);
+			
+			this.informOnReceivingError(exception);
+			
+			throw exception;
 		}
 		
 		buffer.flip();
@@ -310,7 +312,10 @@ public class SocketChannelDriver implements DataCommunicator
 		
 		buffer.get(data);
 		
-		this.informDataReceived(data);
+		if(data.length > 0)
+		{
+			this.informDataReceived(data);
+		}
 		
 		return data;
 	}
@@ -329,54 +334,11 @@ public class SocketChannelDriver implements DataCommunicator
 		return this.readBuffer;
 	}
 	
-	private void informDataReceived(byte[] data)
-	{
-		String methodName = "void SocketChannelDriver::informDataReceived(byte[])";
-		
-		this.notifyListeners(methodName, this.dataListeners, (listener) ->
-		{
-			listener.onDataReceived(Instant.now(), this, data);
-		});
-	}
-	
-	private <T> void notifyListeners(String methodName, Set<T> listeners, Consumer<T> notificationTask)
-	{
-		try
-		{
-			this.executorService.submit(() ->
-			{
-				if(this.shuttingDown)
-				{
-					return;
-				}
-				
-				for(T listener : listeners)
-				{
-					try
-					{
-						notificationTask.accept(listener);
-					}
-					catch(RuntimeException e)
-					{
-						String errorMessage = MessageUtil.getMessage(Messages.LISTENER_THROWN_EXCEPTION_ERROR, listener.getClass().getName());
-						
-						LOGGER.warning(errorMessage, e);
-					}
-				}
-			});
-		}
-		catch(RejectedExecutionException e)
-		{
-			String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
-			
-			LOGGER.debug(errorMessage, e);
-		}
-	}
-	
 	@Override
 	public SocketChannelDriver connect() throws CommunicationException
 	{
 		this.socketLock.lock();
+		
 		try
 		{
 			if(this.shuttingDown)
@@ -385,14 +347,22 @@ public class SocketChannelDriver implements DataCommunicator
 				
 				String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
 				
-				throw new CommunicationException(errorMessage);
+				CommunicationException exception = new CommunicationException(errorMessage);
+				
+				this.informOnConnectError(exception);
+				
+				throw exception;
 			}
 			
 			if(this.socketChannel != null && this.socketChannel.isConnected())
 			{
 				String errorMessage = MessageUtil.getMessage(Messages.ALREADY_CONNECTED_ERROR, this.getStringIdentifier());
 				
-				throw new ConnectionClosedException(errorMessage);
+				CommunicationException exception = new CommunicationException(errorMessage);
+				
+				this.informOnConnectError(exception);
+				
+				throw exception;
 			}
 			
 			if(this.socketChannel == null)
@@ -414,7 +384,7 @@ public class SocketChannelDriver implements DataCommunicator
 		}
 		catch(IOException e)
 		{
-			String errorMessage = MessageUtil.getMessage(Messages.CONNECTING_ERROR, this.configurationValues.toString());
+			String errorMessage = MessageUtil.getMessage(Messages.CONNECTION_ERROR, this.configurationValues.toString());
 			
 			throw new CommunicationException(errorMessage, e);
 		}
@@ -462,7 +432,7 @@ public class SocketChannelDriver implements DataCommunicator
 					{
 						Thread.currentThread().interrupt();
 						
-						String errorMessage = MessageUtil.getMessage(Messages.CONNECTING_ERROR, this.configurationValues.toString());
+						String errorMessage = MessageUtil.getMessage(Messages.CONNECTION_ERROR, this.configurationValues.toString());
 						
 						throw new CommunicationException(errorMessage, e);
 					}
@@ -471,26 +441,25 @@ public class SocketChannelDriver implements DataCommunicator
 		}
 		catch(IOException e)
 		{
-			String errorMessage = MessageUtil.getMessage(Messages.CONNECTING_ERROR, this.configurationValues.toString());
+			String errorMessage = MessageUtil.getMessage(Messages.CONNECTION_ERROR, this.configurationValues.toString());
 			
 			throw new CommunicationException(errorMessage, e);
 		}
 	}
 	
-	private void informConnected()
-	{
-		String methodName = "void SocketChannelDriver::informConnected()";
-		
-		this.notifyListeners(methodName, this.connectionEventListeners, (listener) ->
-		{
-			listener.onConnect(Instant.now(), this);
-		});
-	}
-	
 	@Override
 	public SocketChannelDriver connect(ConfigurationValues configurationValues) throws CommunicationException
 	{
-		this.setConfigurationValues(configurationValues);
+		try
+		{
+			this.setConfigurationValues(configurationValues);
+		}
+		catch(CommunicationException e)
+		{
+			this.informOnConnectError(e);
+			
+			throw e;
+		}
 		
 		return this.connect();
 	}
@@ -512,27 +481,41 @@ public class SocketChannelDriver implements DataCommunicator
 		
 		try
 		{
-			this.informDisconnected();
-			this.executorService.shutdown();
-			
-			if(this.socketChannel != null && this.socketChannel.isOpen())
+			if(this.closeSocketChannel())
 			{
-				try
-				{
-					this.socketChannel.close();
-				}
-				finally
-				{
-					this.removeShutdownHook();
-				}
+				this.informDisconnected();
+				this.waitForExecutorServiceShutdown();
 			}
-			
 		}
 		catch(IOException e)
 		{
-			String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTING_ERROR, this.getStringIdentifier());
+			String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTION_ERROR, this.getStringIdentifier());
 			
-			throw new CommunicationException(errorMessage, e);
+			CommunicationException exception = new CommunicationException(errorMessage, e);
+			
+			this.informOnDisconnectError(exception);
+			
+			throw exception;
+		}
+		catch(InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+			
+			String methodName = "SocketChannelDriver SocketChannelDriver::disconnect() ";
+			String errorMessage = MessageUtil.getMessage(Messages.INTERRUPTED_ERROR, methodName);
+			
+			CommunicationException exception = new CommunicationException(errorMessage, e);
+			
+			try
+			{
+				this.shutdown();
+			}
+			catch (CommunicationException e1)
+			{
+				exception.addSuppressed(e1);
+			}
+			
+			throw exception;
 		}
 		finally
 		{
@@ -542,6 +525,50 @@ public class SocketChannelDriver implements DataCommunicator
 		return this;
 	}
 	
+	private boolean closeSocketChannel() throws IOException
+	{
+		if(this.socketChannel != null && this.socketChannel.isOpen())
+		{
+			try
+			{
+				this.socketChannel.close();
+				
+				return true;
+			}
+			finally
+			{
+				this.removeShutdownHook();
+			}
+		}
+		
+		return false;
+	}
+	
+	private void waitForExecutorServiceShutdown() throws InterruptedException
+	{
+		this.executorService.shutdown();
+		
+		try
+		{
+			if(!this.executorService.awaitTermination(Values.Constants.TERMINATION_TIMOUT_MS, TimeUnit.MILLISECONDS))
+			{
+				this.executorService.shutdownNow();
+				
+				String methodName = "boolean" + this.executorService.getClass().getName() + "::awaitTermination(long, TimeUnit) ";
+				String errorMessage = MessageUtil.getMessage(Messages.TERMINATION_TIMEOUT_ERROR, methodName);
+				
+				LOGGER.debug(errorMessage);
+			}
+		}
+		catch (InterruptedException e)
+		{
+			this.executorService.shutdownNow();
+			
+			throw e;
+		}
+	}
+	
+	@Override
 	public SocketChannelDriver shutdown() throws CommunicationException
 	{
 		this.shuttingDown = true;
@@ -552,17 +579,7 @@ public class SocketChannelDriver implements DataCommunicator
 		{
 			this.executorService.shutdownNow();
 			
-			if(this.socketChannel != null && this.socketChannel.isOpen())
-			{
-				try
-				{
-					this.socketChannel.close();
-				}
-				finally
-				{
-					this.removeShutdownHook();
-				}
-			}
+			this.closeSocketChannel();
 		}
 		catch(IOException e)
 		{
@@ -578,6 +595,16 @@ public class SocketChannelDriver implements DataCommunicator
 		return this;
 	}
 	
+	private void informConnected()
+	{
+		String methodName = "void SocketChannelDriver::informConnected()";
+		
+		this.notifyListeners(methodName, this.connectionEventListeners, (listener) ->
+		{
+			listener.onConnect(Instant.now(), this);
+		});
+	}
+	
 	private void informDisconnected()
 	{
 		String methodName = "void SocketChannelDriver::informDisconnected()";
@@ -586,6 +613,125 @@ public class SocketChannelDriver implements DataCommunicator
 		{
 			listener.onDisconnect(Instant.now(), this);
 		});
+	}
+	
+	private void informDataSent(byte[] data)
+	{
+		String methodName = "void SocketChannelDriver::informDataSent(byte[])";
+		
+		this.notifyListeners(methodName, this.dataListeners, (listener) ->
+		{
+			listener.onDataSent(Instant.now(), this, data);
+		});
+	}
+	
+	private void informDataReceived(byte[] data)
+	{
+		String methodName = "void SocketChannelDriver::informDataReceived(byte[])";
+		
+		this.notifyListeners(methodName, this.dataListeners, (listener) ->
+		{
+			listener.onDataReceived(Instant.now(), this, data);
+		});
+	}
+	
+	@Override
+	public SocketChannelDriver informOnConnectError(Throwable exception)
+	{
+		String methodName = "void SocketChannelDriver::informOnConnectError(Throwable)";
+		
+		this.notifyListeners(methodName, this.connectionEventListeners, (listener) ->
+		{
+			listener.onConnectError(Instant.now(), this, exception);
+		});
+		
+		return this;
+	}
+	
+	@Override
+	public SocketChannelDriver informOnDisconnectError(Throwable exception)
+	{
+		String methodName = "void SocketChannelDriver::informOnDisconnectError(Throwable)";
+		
+		this.notifyListeners(methodName, this.connectionEventListeners, (listener) ->
+		{
+			listener.onDisconnectError(Instant.now(), this, exception);
+		});
+		
+		return this;
+	}
+	
+	@Override
+	public void informOnSendingError(byte[] data, Throwable exception)
+	{
+		String methodName = "void SocketChannelDriver::informOnSendingError(byte[], Throwable)";
+		
+		this.notifyListeners(methodName, this.dataListeners, (listener) ->
+		{
+			listener.onSendingError(Instant.now(), this, data, exception);
+		});
+	}
+	
+	@Override
+	public void informOnReceivingError(Throwable exception)
+	{
+		String methodName = "void SocketChannelDriver::informReceivingError(Throwable)";
+		
+		this.notifyListeners(methodName, this.dataListeners, (listener) ->
+		{
+			listener.onReceivingError(Instant.now(), this, exception);
+		});
+	}
+	
+	/**
+	 * Notifies all listeners of a particular event in an asynchronous manner.
+	 *
+	 * @param <T> The type of the listeners to be notified.
+	 * @param methodName The name of the method from which this is being called, for logging purposes.
+	 * @param listeners The set of listeners to notify.
+	 * @param notificationTask The consumer task that performs the notification.
+	 */
+	private <T> void notifyListeners(String methodName, Set<T> listeners, Consumer<T> notificationTask)
+	{
+		try
+		{
+			if(this.executorService.isShutdown() || this.executorService.isTerminated())
+			{
+				String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
+				
+				LOGGER.debug(errorMessage);
+				
+				return;
+			}
+			
+			this.executorService.submit(() ->
+			{
+				if(this.shuttingDown)
+				{
+					return;
+				}
+				
+				for(T listener : listeners)
+				{
+					try
+					{
+						notificationTask.accept(listener);
+					}
+					catch(RuntimeException e)
+					{
+						String errorMessage = MessageUtil.getMessage(Messages.LISTENER_THROWN_EXCEPTION_ERROR, listener.getClass().getName());
+						
+						LOGGER.warning(errorMessage, e);
+					}
+				}
+			});
+		}
+		catch(RejectedExecutionException e)
+		{
+			String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
+			
+			LOGGER.debug(errorMessage, e);
+		}
 	}
 	
 	@Override
@@ -678,8 +824,18 @@ public class SocketChannelDriver implements DataCommunicator
 	{
 		if(this.stringIdentifier == null)
 		{
-			SocketAddress remoteAddress = this.getRemoteAddress();
-			SocketAddress localAddress = this.getLocalAddress();
+			SocketAddress remoteAddress = null;
+			SocketAddress localAddress = null;
+			
+			try
+			{
+				remoteAddress = this.getRemoteAddress();
+				localAddress = this.getLocalAddress();
+			}
+			catch(CommunicationException e)
+			{
+				LOGGER.warning(e);
+			}
 			
 			StringBuilder sb = new StringBuilder();
 			
@@ -693,7 +849,7 @@ public class SocketChannelDriver implements DataCommunicator
 		return this.stringIdentifier;
 	}
 	
-	public SocketAddress getRemoteAddress()
+	public SocketAddress getRemoteAddress() throws CommunicationException
 	{
 		try
 		{
@@ -705,13 +861,11 @@ public class SocketChannelDriver implements DataCommunicator
 			
 			String errorMessage = MessageUtil.getMessage(Messages.UNABLE_TO_OBTAIN_VALUE_ERROR, "remoteAddress", methodName);
 			
-			LOGGER.error(errorMessage, e);
-			
-			return null;
+			throw new CommunicationException(errorMessage, e);
 		}
 	}
 	
-	public SocketAddress getLocalAddress()
+	public SocketAddress getLocalAddress() throws CommunicationException
 	{
 		try
 		{
@@ -723,9 +877,7 @@ public class SocketChannelDriver implements DataCommunicator
 			
 			String errorMessage = MessageUtil.getMessage(Messages.UNABLE_TO_OBTAIN_VALUE_ERROR, "localAddress", methodName);
 			
-			LOGGER.error(errorMessage, e);
-			
-			return null;
+			throw new CommunicationException(errorMessage, e);
 		}
 	}
 	
@@ -795,7 +947,9 @@ public class SocketChannelDriver implements DataCommunicator
 			{
 				if(this.dataReader == null)
 				{
-					this.dataReader = new SocketChannelDataReader(this);
+					//TODO cambiar de reader.
+//					this.dataReader = new SocketChannelDataReader(this);
+					this.dataReader = new DefaultDataReader<>(this);
 				}
 			}
 			finally

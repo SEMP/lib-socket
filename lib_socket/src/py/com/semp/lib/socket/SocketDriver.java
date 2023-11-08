@@ -20,9 +20,9 @@ import py.com.semp.lib.socket.configuration.Values;
 import py.com.semp.lib.socket.internal.MessageUtil;
 import py.com.semp.lib.socket.internal.Messages;
 import py.com.semp.lib.utilidades.communication.ShutdownHookAction;
+import py.com.semp.lib.utilidades.communication.interfaces.DataCommunicator;
 import py.com.semp.lib.utilidades.communication.interfaces.DataInterface;
-import py.com.semp.lib.utilidades.communication.interfaces.DataReceiver;
-import py.com.semp.lib.utilidades.communication.interfaces.DataTransmitter;
+import py.com.semp.lib.utilidades.communication.interfaces.DataReader;
 import py.com.semp.lib.utilidades.communication.listeners.ConnectionEventListener;
 import py.com.semp.lib.utilidades.communication.listeners.DataListener;
 import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
@@ -30,7 +30,7 @@ import py.com.semp.lib.utilidades.exceptions.CommunicationException;
 import py.com.semp.lib.utilidades.log.Logger;
 import py.com.semp.lib.utilidades.log.LoggerManager;
 
-public class SocketDriver implements DataInterface, DataReceiver, DataTransmitter
+public class SocketDriver implements DataCommunicator
 {
 	private static final Logger LOGGER = LoggerManager.getLogger(Values.Constants.SOCKET_CONTEXT);
 	
@@ -368,7 +368,7 @@ public class SocketDriver implements DataInterface, DataReceiver, DataTransmitte
 			}
 			catch(IOException e)
 			{
-				String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTING_ERROR, this.getStringIdentifier());
+				String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTION_ERROR, this.getStringIdentifier());
 				
 				if(suppressedException != null)
 				{
@@ -388,7 +388,7 @@ public class SocketDriver implements DataInterface, DataReceiver, DataTransmitte
 			
 			if(suppressedException != null)
 			{
-				String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTING_ERROR, this.getStringIdentifier());
+				String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTION_ERROR, this.getStringIdentifier());
 				
 				throw new CommunicationException(errorMessage, suppressedException);
 			}
@@ -616,5 +616,49 @@ public class SocketDriver implements DataInterface, DataReceiver, DataTransmitte
 	{
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public DataReader getDataReader()
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean isShuttingdown()
+	{
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void informOnReceivingError(Throwable exception)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void informOnSendingError(byte[] data, Throwable exception)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public SocketDriver informOnConnectError(Throwable e)
+	{
+		return this;
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public SocketDriver informOnDisconnectError(Throwable e)
+	{
+		return this;
+		// TODO Auto-generated method stub
+		
 	}
 }

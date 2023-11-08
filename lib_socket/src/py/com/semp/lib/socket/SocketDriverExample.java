@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import py.com.semp.lib.utilidades.communication.interfaces.DataInterface;
+import py.com.semp.lib.utilidades.communication.interfaces.DataReader;
 import py.com.semp.lib.utilidades.communication.interfaces.DataReceiver;
 import py.com.semp.lib.utilidades.communication.interfaces.DataTransmitter;
 import py.com.semp.lib.utilidades.communication.listeners.ConnectionEventListener;
@@ -196,5 +197,49 @@ public class SocketDriverExample implements DataInterface, DataReceiver, DataTra
 	{
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public DataReader getDataReader()
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean isShuttingdown()
+	{
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void informOnSendingError(byte[] data, Throwable exception)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void informOnReceivingError(Throwable exception)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public SocketDriverExample informOnConnectError(Throwable e)
+	{
+		return this;
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public SocketDriverExample informOnDisconnectError(Throwable e)
+	{
+		return this;
+		// TODO Auto-generated method stub
+		
 	}
 }

@@ -21,9 +21,14 @@ public interface Values
 		public static final int SOCKET_LISTENERS_THREAD_POOL_SIZE = 10;
 		
 		/**
-		 * Time delay for checking if the connection was established.
+		 * Time delay for polls.
 		 */
 		public static final int POLL_DELAY_MS = 50;
+		
+		/**
+		 * Time to wait for tasks termination.
+		 */
+		public static final long TERMINATION_TIMOUT_MS = Utilities.Constants.TERMINATION_TIMOUT_MS;
 		
 		//String values
 		/**

@@ -45,10 +45,17 @@ public class SocketChannelDataReader implements DataReader
 	}
 
 	@Override
-	public boolean readingComplete()
+	public boolean isReadingComplete()
 	{
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public void shutdown()
+	{
+		// TODO Auto-generated method stub
+		
 	}
 	
 }
