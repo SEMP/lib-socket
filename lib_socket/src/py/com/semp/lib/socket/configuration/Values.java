@@ -25,11 +25,6 @@ public interface Values
 		 */
 		public static final int POLL_DELAY_MS = 50;
 		
-		/**
-		 * Time to wait for tasks termination.
-		 */
-		public static final long TERMINATION_TIMOUT_MS = Utilities.Constants.TERMINATION_TIMOUT_MS;
-		
 		//String values
 		/**
 		 * Context name for the socket library
@@ -56,7 +51,7 @@ public interface Values
 	 */
 	public interface VariableNames
 	{
-		// Integer Variable Names
+		// Integer Variables Names
 		/**
 		 * The port of the remote host.
 		 */
@@ -87,7 +82,13 @@ public interface Values
 		 */
 		public static final String SOCKET_BUFFER_SIZE_BYTES = "socketBufferSizeBytes";
 		
-		// String Variable Names
+		//Long Variables Names
+		/**
+		 * Time to wait for tasks termination.
+		 */
+		public static final String TERMINATION_TIMOUT_MS = "terminationTimeoutMS";
+		
+		// String Variables Names
 		/**
 		 * The address of the remote host.
 		 */
@@ -116,6 +117,7 @@ public interface Values
 		public static final Integer READ_TIMEOUT_MS = -1;
 		public static final Integer WRITE_TIMEOUT_MS = -1;
 		public static final Integer SOCKET_BUFFER_SIZE_BYTES = 1024 * 2;
+		public static final Integer TERMINATION_TIMOUT_MS = Utilities.Constants.TERMINATION_TIMOUT_MS;
 	}
 	
 	/**

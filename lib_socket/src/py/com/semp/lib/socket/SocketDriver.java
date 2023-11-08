@@ -29,20 +29,24 @@ import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
 import py.com.semp.lib.utilidades.exceptions.CommunicationException;
 import py.com.semp.lib.utilidades.log.Logger;
 import py.com.semp.lib.utilidades.log.LoggerManager;
+import py.com.semp.lib.utilidades.utilities.NamedThreadFactory;
 
 public class SocketDriver implements DataCommunicator
 {
+	private static final String LISTENERS_THREAD_NAME = "SocketDriverListeners";
 	private static final Logger LOGGER = LoggerManager.getLogger(Values.Constants.SOCKET_CONTEXT);
 	
-	private final Thread shutdownHook = new Thread(new ShutdownHookAction(this));
-	private final ReentrantLock socketLock = new ReentrantLock();
 	private Socket socket;
+	private volatile String stringIdentifier;
+	private final Thread shutdownHook = new Thread(new ShutdownHookAction(this));
 	private SocketConfiguration configurationValues;
 	private final CopyOnWriteArraySet<DataListener> dataListeners = new CopyOnWriteArraySet<>();
 	private final CopyOnWriteArraySet<ConnectionEventListener> connectionEventListeners = new CopyOnWriteArraySet<>();
+	private final ExecutorService executorService = Executors.newFixedThreadPool(Values.Constants.SOCKET_LISTENERS_THREAD_POOL_SIZE, new NamedThreadFactory(LISTENERS_THREAD_NAME));
+	private final ReentrantLock socketLock = new ReentrantLock();
+	private volatile boolean shuttingDown = false;
 	private volatile AtomicBoolean connected = new AtomicBoolean(false);
-	private volatile String stringIdentifier;
-	private final ExecutorService executorService = Executors.newFixedThreadPool(Values.Constants.SOCKET_LISTENERS_THREAD_POOL_SIZE);
+	private volatile DataReader dataReader;
 	
 	public SocketDriver() throws CommunicationException
 	{

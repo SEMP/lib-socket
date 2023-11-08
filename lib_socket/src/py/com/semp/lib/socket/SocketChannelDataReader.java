@@ -57,5 +57,4 @@ public class SocketChannelDataReader implements DataReader
 		// TODO Auto-generated method stub
 		
 	}
-	
 }
