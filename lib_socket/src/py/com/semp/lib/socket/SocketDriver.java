@@ -665,4 +665,11 @@ public class SocketDriver implements DataCommunicator
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public boolean isStopping()
+	{
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

@@ -242,4 +242,11 @@ public class SocketDriverExample implements DataInterface, DataReceiver, DataTra
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public boolean isStopping()
+	{
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

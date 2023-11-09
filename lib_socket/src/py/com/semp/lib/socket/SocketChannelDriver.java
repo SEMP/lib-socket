@@ -79,6 +79,7 @@ public class SocketChannelDriver implements DataCommunicator
 	private final ExecutorService executorService = Executors.newFixedThreadPool(Values.Constants.SOCKET_LISTENERS_THREAD_POOL_SIZE, new NamedThreadFactory(LISTENERS_THREAD_NAME));
 	private final ReentrantLock socketLock = new ReentrantLock();
 	private volatile boolean shuttingDown = false;
+	private volatile boolean stopping = false;
 	private ByteBuffer readBuffer;
 	private volatile DataReader dataReader;
 	
@@ -243,8 +244,11 @@ public class SocketChannelDriver implements DataCommunicator
 			
 			try
 			{
-				remoteAddress = this.getRemoteAddress();
-				localAddress = this.getLocalAddress();
+				if(this.isConnected())
+				{
+					remoteAddress = this.getRemoteAddress();
+					localAddress = this.getLocalAddress();
+				}
 			}
 			catch(CommunicationException e)
 			{
@@ -606,7 +610,17 @@ public class SocketChannelDriver implements DataCommunicator
 			
 			this.informOnConnectError(exception);
 			
+			this.stopping = true;
+			
 			throw exception;
+		}
+		catch(CommunicationException e)
+		{
+			this.informOnConnectError(e);
+			
+			this.stopping = true;
+			
+			throw e;
 		}
 		finally
 		{
@@ -626,6 +640,8 @@ public class SocketChannelDriver implements DataCommunicator
 		catch(CommunicationException e)
 		{
 			this.informOnConnectError(e);
+			
+			this.disconnect();
 			
 			throw e;
 		}
@@ -721,10 +737,18 @@ public class SocketChannelDriver implements DataCommunicator
 		
 		try
 		{
+			this.stopping = true;
+			
+			
 			if(this.closeSocketChannel())
 			{
 				this.informOnDisconnect();
+				this.executorService.shutdown();
 				this.waitForExecutorServiceShutdown();
+			}
+			else
+			{
+				this.executorService.shutdown();
 			}
 		}
 		catch(IOException e)
@@ -1153,8 +1177,15 @@ public class SocketChannelDriver implements DataCommunicator
 	}
 	
 	@Override
+	public boolean isStopping()
+	{
+		return this.stopping;
+	}
+	
+	@Override
 	public boolean isShuttingdown()
 	{
 		return this.shuttingDown;
 	}
+	
 }
