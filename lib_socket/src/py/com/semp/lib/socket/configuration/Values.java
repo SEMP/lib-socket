@@ -82,7 +82,6 @@ public interface Values
 		 */
 		public static final String SOCKET_BUFFER_SIZE_BYTES = "socketBufferSizeBytes";
 		
-		//Long Variables Names
 		/**
 		 * Time to wait for tasks termination.
 		 */

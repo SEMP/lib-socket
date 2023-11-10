@@ -252,7 +252,7 @@ public class SocketChannelDriver implements DataCommunicator
 			}
 			catch(CommunicationException e)
 			{
-				LOGGER.warning(e);
+				LOGGER.debug(e);
 			}
 			
 			StringBuilder sb = new StringBuilder();
@@ -454,11 +454,12 @@ public class SocketChannelDriver implements DataCommunicator
 	}
 	
 	@Override
-	public void sendData(byte[] data) throws CommunicationException
+	public SocketChannelDriver sendData(byte[] data) throws CommunicationException
 	{
-		int writeTimeout = this.configurationValues.getValue(Values.VariableNames.WRITE_TIMEOUT_MS);
 		long start = System.nanoTime();
-		long timeoutNano = writeTimeout * 1000000L;
+		
+		int writeTimeoutMS = this.configurationValues.getValue(Values.VariableNames.WRITE_TIMEOUT_MS);
+		long writeTimeoutNano = TimeUnit.MILLISECONDS.toNanos(writeTimeoutMS);
 		
 		if(!this.socketChannel.isConnected())
 		{
@@ -473,7 +474,7 @@ public class SocketChannelDriver implements DataCommunicator
 		
 		if(data == null || data.length == 0)
 		{
-			return;
+			return this;
 		}
 		
 		this.socketLock.lock();
@@ -493,8 +494,6 @@ public class SocketChannelDriver implements DataCommunicator
 			
 			ByteBuffer buffer = ByteBuffer.wrap(data);
 			
-			LOGGER.debug(String.format("Sending %d bytes (%s): %s", data.length, this.getStringIdentifier(), ArrayUtils.toHexaArrayString(data)));
-			
 			while(buffer.hasRemaining())
 			{
 				if(this.shuttingDown)
@@ -510,7 +509,7 @@ public class SocketChannelDriver implements DataCommunicator
 					throw exception;
 				}
 				
-				if(timeoutNano >= 0 && System.nanoTime() - start >= timeoutNano)
+				if(writeTimeoutNano >= 0 && System.nanoTime() - start >= writeTimeoutNano)
 				{
 					String errorMessage = MessageUtil.getMessage(Messages.WRITTING_TIMOUT_ERROR, data.length, this.configurationValues.toString());
 					
@@ -519,6 +518,13 @@ public class SocketChannelDriver implements DataCommunicator
 					this.informOnSendingError(data, exception);
 					
 					throw exception;
+				}
+				
+				if(LOGGER.isDebugging())
+				{
+					String message = MessageUtil.getMessage(Messages.SENDING_DEBUG_MESSAGE, data.length, this.getStringIdentifier(), new String(data), ArrayUtils.toHexaArrayString(data));
+					
+					LOGGER.debug(message);
 				}
 				
 				int bytesWritten = socketChannel.write(buffer);
@@ -551,6 +557,8 @@ public class SocketChannelDriver implements DataCommunicator
 		{
 			this.socketLock.unlock();
 		}
+		
+		return this;
 	}
 	
 	@Override
@@ -739,17 +747,12 @@ public class SocketChannelDriver implements DataCommunicator
 		{
 			this.stopping = true;
 			
-			
 			if(this.closeSocketChannel())
 			{
 				this.informOnDisconnect();
-				this.executorService.shutdown();
-				this.waitForExecutorServiceShutdown();
 			}
-			else
-			{
-				this.executorService.shutdown();
-			}
+			
+			this.shutdownAndWaitForExecutorService();
 		}
 		catch(IOException e)
 		{
@@ -854,7 +857,7 @@ public class SocketChannelDriver implements DataCommunicator
 	 * @throws InterruptedException if the current thread is interrupted while waiting, in which case
 	 *         the executor service is also shut down immediately
 	 */
-	private void waitForExecutorServiceShutdown() throws InterruptedException
+	private void shutdownAndWaitForExecutorService() throws InterruptedException
 	{
 		this.executorService.shutdown();
 		
@@ -948,7 +951,7 @@ public class SocketChannelDriver implements DataCommunicator
 	@Override
 	public SocketChannelDriver informOnConnectError(Throwable exception)
 	{
-		String methodName = "void SocketChannelDriver::informOnConnectError(Throwable)";
+		String methodName = "SocketChannelDriver SocketChannelDriver::informOnConnectError(Throwable)";
 		
 		this.notifyListeners(methodName, this.connectionEventListeners, (listener) ->
 		{
@@ -972,25 +975,29 @@ public class SocketChannelDriver implements DataCommunicator
 	}
 	
 	@Override
-	public void informOnSendingError(byte[] data, Throwable exception)
+	public SocketChannelDriver informOnSendingError(byte[] data, Throwable exception)
 	{
-		String methodName = "void SocketChannelDriver::informOnSendingError(byte[], Throwable)";
+		String methodName = "SocketChannelDriver SocketChannelDriver::informOnSendingError(byte[], Throwable)";
 		
 		this.notifyListeners(methodName, this.dataListeners, (listener) ->
 		{
 			listener.onSendingError(Instant.now(), this, data, exception);
 		});
+		
+		return this;
 	}
 	
 	@Override
-	public void informOnReceivingError(Throwable exception)
+	public SocketChannelDriver informOnReceivingError(Throwable exception)
 	{
-		String methodName = "void SocketChannelDriver::informReceivingError(Throwable)";
+		String methodName = "SocketChannelDriver SocketChannelDriver::informOnReceivingError(Throwable)";
 		
 		this.notifyListeners(methodName, this.dataListeners, (listener) ->
 		{
 			listener.onReceivingError(Instant.now(), this, exception);
 		});
+		
+		return this;
 	}
 	
 	/**
@@ -1187,5 +1194,4 @@ public class SocketChannelDriver implements DataCommunicator
 	{
 		return this.shuttingDown;
 	}
-	
 }

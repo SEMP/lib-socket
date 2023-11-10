@@ -2,7 +2,7 @@ package py.com.semp.lib.socket.configuration;
 
 import java.time.Instant;
 
-import py.com.semp.lib.socket.SocketChannelDriver;
+import py.com.semp.lib.socket.SocketDriver;
 import py.com.semp.lib.utilidades.communication.interfaces.DataCommunicator;
 import py.com.semp.lib.utilidades.communication.interfaces.DataInterface;
 import py.com.semp.lib.utilidades.communication.interfaces.DataReader;
@@ -11,15 +11,13 @@ import py.com.semp.lib.utilidades.communication.listeners.DataListener;
 import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
 import py.com.semp.lib.utilidades.exceptions.CommunicationException;
 import py.com.semp.lib.utilidades.exceptions.ConnectionClosedException;
-import py.com.semp.lib.utilidades.log.DefaultLogger;
-import py.com.semp.lib.utilidades.log.Logger;
-import py.com.semp.lib.utilidades.log.LoggerManager;
 
 public class Borrar
 {
 	public static void main(String[] args) throws CommunicationException
 	{
-		DataCommunicator communicator = new SocketChannelDriver();
+//		DataCommunicator communicator = new SocketChannelDriver();
+		DataCommunicator communicator = new SocketDriver();
 		ConfigurationValues configurationValues = new SocketConfiguration();
 		
 		configurationValues.setParameter(Values.VariableNames.REMOTE_ADDRESS, "127.0.0.1");

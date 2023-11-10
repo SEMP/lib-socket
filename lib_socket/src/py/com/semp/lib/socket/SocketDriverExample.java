@@ -143,7 +143,7 @@ public class SocketDriverExample implements DataInterface, DataReceiver, DataTra
 	}
 	
 	@Override
-	public void sendData(byte[] data) throws CommunicationException
+	public SocketDriverExample sendData(byte[] data) throws CommunicationException
 	{
 		try
 		{
@@ -155,6 +155,8 @@ public class SocketDriverExample implements DataInterface, DataReceiver, DataTra
 		{
 			throw new CommunicationException("Failed to send data through socket.", e);
 		}
+		
+		return this;
 	}
 	
 	@Override
@@ -214,15 +216,17 @@ public class SocketDriverExample implements DataInterface, DataReceiver, DataTra
 	}
 
 	@Override
-	public void informOnSendingError(byte[] data, Throwable exception)
+	public SocketDriverExample informOnSendingError(byte[] data, Throwable exception)
 	{
+		return this;
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public void informOnReceivingError(Throwable exception)
+	public SocketDriverExample informOnReceivingError(Throwable exception)
 	{
+		return this;
 		// TODO Auto-generated method stub
 		
 	}
