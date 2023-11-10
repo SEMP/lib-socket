@@ -53,6 +53,7 @@ public class SocketDriver implements DataCommunicator
 	private final ReentrantLock socketLock = new ReentrantLock();
 	private volatile boolean shuttingDown = false;
 	private volatile boolean stopping = false;
+	private volatile boolean connected = false;
 	private byte[] readBuffer;
 	private volatile DataReader dataReader;
 	
@@ -343,15 +344,9 @@ public class SocketDriver implements DataCommunicator
 			
 			InputStream inputStream = this.socket.getInputStream();
 			
-			int dataAvailable = inputStream.available();
-			int bytesRead = 0;
-			byte[] dataBuffer = null;
+			byte[] dataBuffer = this.getReadBuffer();
 			
-			if(dataAvailable > 0)
-			{
-				dataBuffer = this.getReadBuffer();
-				bytesRead = inputStream.read(dataBuffer);
-			}
+			int bytesRead = inputStream.read(dataBuffer);;
 			
 			if(bytesRead == -1)
 			{
@@ -628,6 +623,8 @@ public class SocketDriver implements DataCommunicator
 			}
 			
 			this.socket.connect(address, connectionTimeoutMS);
+			
+			this.connected = true;
 		}
 		catch(SocketTimeoutException e)
 		{
@@ -701,6 +698,7 @@ public class SocketDriver implements DataCommunicator
 	public SocketDriver shutdown() throws CommunicationException
 	{
 		this.shuttingDown = true;
+		this.connected = false;
 		
 		this.socketLock.lock();
 		
@@ -736,6 +734,8 @@ public class SocketDriver implements DataCommunicator
 	{
 		if(this.socket != null && !this.socket.isClosed())
 		{
+			this.connected = false;
+			
 			IOException suppressedException = null;
 			
 			try
@@ -1111,7 +1111,7 @@ public class SocketDriver implements DataCommunicator
 		
 		boolean socketConnected = this.socket.isConnected() && !this.socket.isClosed();
 		
-		return !this.stopping && socketConnected;
+		return !this.stopping && this.connected && socketConnected;
 	}
 	
 	@Override

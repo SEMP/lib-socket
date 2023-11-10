@@ -76,8 +76,6 @@ public class Borrar
 		{
 			if(exception instanceof ConnectionClosedException)
 			{
-//				System.out.println("desconectado: " + dataInterface.getStringIdentifier());
-				
 				return;
 			}
 			
