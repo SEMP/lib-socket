@@ -175,7 +175,13 @@ public class SocketDriver implements DataCommunicator
 	}
 	
 	@Override
-	public String getStringIdentifier()
+	public String getStableStringIdentifier()
+	{
+		return this.stringIdentifier;
+	}
+	
+	@Override
+	public String getDynamicStringIdentifier()
 	{
 		if(this.stringIdentifier == null)
 		{
@@ -183,6 +189,20 @@ public class SocketDriver implements DataCommunicator
 			SocketAddress localAddress = this.getLocalAddress();
 			
 			StringBuilder sb = new StringBuilder();
+			
+			if(remoteAddress == null || localAddress == null)
+			{
+				String pendingText = Values.Utilities.Constants.PENDING_VAULE;
+				
+				String localAddressText = localAddress == null ? pendingText : getAddressString(localAddress);
+				String remoteAddressText = remoteAddress == null ? pendingText : getAddressString(remoteAddress);
+				
+				sb.append("L[").append(localAddressText).append("]");
+				sb.append("<->");
+				sb.append("R[").append(remoteAddressText).append("]");
+				
+				return sb.toString();
+			}
 			
 			sb.append("L[").append(getAddressString(localAddress)).append("]");
 			sb.append("<->");
@@ -305,7 +325,7 @@ public class SocketDriver implements DataCommunicator
 		
 		if(!this.isConnected())
 		{
-			String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getStringIdentifier());
+			String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getDynamicStringIdentifier());
 			
 			ConnectionClosedException exception = new ConnectionClosedException(errorMessage);
 			
@@ -333,7 +353,7 @@ public class SocketDriver implements DataCommunicator
 		{
 			if(!this.isConnected())
 			{
-				String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getStringIdentifier());
+				String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getDynamicStringIdentifier());
 				
 				ConnectionClosedException exception = new ConnectionClosedException(errorMessage);
 				
@@ -350,7 +370,7 @@ public class SocketDriver implements DataCommunicator
 			
 			if(bytesRead == -1)
 			{
-				String errorMessage = MessageUtil.getMessage(Messages.END_OF_STREAM_REACHED, this.getStringIdentifier());
+				String errorMessage = MessageUtil.getMessage(Messages.END_OF_STREAM_REACHED, this.getDynamicStringIdentifier());
 				
 				ConnectionClosedException exception = new ConnectionClosedException(errorMessage);
 				
@@ -380,7 +400,7 @@ public class SocketDriver implements DataCommunicator
 		}
 		catch(IOException e)
 		{
-			String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_RECEIVE_DATA_ERROR, this.getStringIdentifier());
+			String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_RECEIVE_DATA_ERROR, this.getDynamicStringIdentifier());
 			
 			CommunicationException exception = new CommunicationException(errorMessage, e);
 			
@@ -437,7 +457,7 @@ public class SocketDriver implements DataCommunicator
 	{
 		if(!this.isConnected())
 		{
-			String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getStringIdentifier());
+			String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getDynamicStringIdentifier());
 			
 			ConnectionClosedException exception = new ConnectionClosedException(errorMessage);
 			
@@ -457,7 +477,7 @@ public class SocketDriver implements DataCommunicator
 		{
 			if(!this.isConnected())
 			{
-				String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getStringIdentifier());
+				String errorMessage = MessageUtil.getMessage(Messages.SOCKET_CLOSED_OR_NOT_CONNECTED_ERROR, this.getDynamicStringIdentifier());
 				
 				ConnectionClosedException exception = new ConnectionClosedException(errorMessage);
 				
@@ -470,7 +490,7 @@ public class SocketDriver implements DataCommunicator
 			
 			if(LOGGER.isDebugging())
 			{
-				String message = MessageUtil.getMessage(Messages.SENDING_DEBUG_MESSAGE, data.length, this.getStringIdentifier(), new String(data), ArrayUtils.toHexaArrayString(data));
+				String message = MessageUtil.getMessage(Messages.SENDING_DEBUG_MESSAGE, data.length, this.getDynamicStringIdentifier(), new String(data), ArrayUtils.toHexaArrayString(data));
 				
 				LOGGER.debug(message);
 			}
@@ -484,7 +504,7 @@ public class SocketDriver implements DataCommunicator
 		{
 			this.stopping = true;
 			
-			String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_SEND_DATA_ERROR, this.getStringIdentifier());
+			String errorMessage = MessageUtil.getMessage(Messages.FAILED_TO_SEND_DATA_ERROR, this.getDynamicStringIdentifier());
 			
 			ConnectionClosedException exception = new ConnectionClosedException(errorMessage, e);
 			
@@ -522,7 +542,7 @@ public class SocketDriver implements DataCommunicator
 			
 			if(this.socket != null && this.socket.isConnected())
 			{
-				String errorMessage = MessageUtil.getMessage(Messages.ALREADY_CONNECTED_ERROR, this.getStringIdentifier());
+				String errorMessage = MessageUtil.getMessage(Messages.ALREADY_CONNECTED_ERROR, this.getDynamicStringIdentifier());
 				
 				CommunicationException exception = new CommunicationException(errorMessage);
 				
@@ -542,7 +562,7 @@ public class SocketDriver implements DataCommunicator
 			
 			this.waitConnection(new InetSocketAddress(address, port), connectionTimeoutMS);
 			
-			this.getStringIdentifier();
+			this.getDynamicStringIdentifier();
 			
 			this.informOnConnect();
 		}
@@ -658,7 +678,7 @@ public class SocketDriver implements DataCommunicator
 		}
 		catch(IOException e)
 		{
-			String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTION_ERROR, this.getStringIdentifier());
+			String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTION_ERROR, this.getDynamicStringIdentifier());
 			
 			CommunicationException exception = new CommunicationException(errorMessage, e);
 			
@@ -710,7 +730,7 @@ public class SocketDriver implements DataCommunicator
 		}
 		catch(IOException e)
 		{
-			String errorMessage = MessageUtil.getMessage(Messages.SHUTDOWN_ERROR, this.getStringIdentifier());
+			String errorMessage = MessageUtil.getMessage(Messages.SHUTDOWN_ERROR, this.getDynamicStringIdentifier());
 			
 			throw new CommunicationException(errorMessage, e);
 		}
@@ -732,7 +752,7 @@ public class SocketDriver implements DataCommunicator
 	 */
 	private boolean closeSocket() throws IOException
 	{
-		if(this.socket != null && !this.socket.isClosed())
+		if(this.socket != null && !this.socket.isClosed() && this.isConnected())
 		{
 			this.connected = false;
 			

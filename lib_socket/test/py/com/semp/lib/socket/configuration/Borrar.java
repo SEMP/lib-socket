@@ -108,7 +108,7 @@ public class Borrar
 		{
 			System.out.println("Desconectado");
 			System.out.println(instant);
-			System.out.println(dataInterface.getStringIdentifier());
+			System.out.println(dataInterface.getDynamicStringIdentifier());
 		}
 
 		@Override
@@ -116,7 +116,7 @@ public class Borrar
 		{
 			System.out.println("Conectado");
 			System.out.println(instant);
-			System.out.println(dataInterface.getStringIdentifier());
+			System.out.println(dataInterface.getDynamicStringIdentifier());
 		}
 
 		@Override
@@ -124,7 +124,7 @@ public class Borrar
 		{
 			System.err.println("Error de conexión:");
 			System.err.println(instant);
-			System.err.println(dataInterface.getStringIdentifier());
+			System.err.println(dataInterface.getDynamicStringIdentifier());
 			System.err.println(throwable.getMessage());
 		}
 
@@ -133,7 +133,7 @@ public class Borrar
 		{
 			System.err.println("Error de desconexión:");
 			System.err.println(instant);
-			System.err.println(dataInterface.getStringIdentifier());
+			System.err.println(dataInterface.getDynamicStringIdentifier());
 			System.err.println(throwable.getMessage());
 		}
 	}
