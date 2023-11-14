@@ -1,5 +1,6 @@
-package py.com.semp.lib.socket;
+package py.com.semp.lib.socket.readers;
 
+import py.com.semp.lib.socket.SocketChannelDriver;
 import py.com.semp.lib.utilidades.communication.interfaces.DataReader;
 
 public class SocketChannelDataReader implements DataReader

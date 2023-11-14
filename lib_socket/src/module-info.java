@@ -5,6 +5,7 @@ module lib_socket
 {
 	exports py.com.semp.lib.socket;
 	exports py.com.semp.lib.socket.configuration;
+	exports py.com.semp.lib.socket.readers;
 	
 	requires transitive lib_utilidades;
 	requires org.junit.jupiter.api;

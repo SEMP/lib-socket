@@ -1,8 +1,9 @@
 package py.com.semp.lib.socket.configuration;
 
 import java.time.Instant;
+import java.util.concurrent.locks.ReentrantLock;
 
-import py.com.semp.lib.socket.SocketDriver;
+import py.com.semp.lib.socket.SocketChannelDriver;
 import py.com.semp.lib.utilidades.communication.interfaces.DataCommunicator;
 import py.com.semp.lib.utilidades.communication.interfaces.DataInterface;
 import py.com.semp.lib.utilidades.communication.interfaces.DataReader;
@@ -14,10 +15,11 @@ import py.com.semp.lib.utilidades.exceptions.ConnectionClosedException;
 
 public class Borrar
 {
+	private static final ReentrantLock PRINT_LOCK = new ReentrantLock();
 	public static void main(String[] args) throws CommunicationException
 	{
-//		DataCommunicator communicator = new SocketChannelDriver();
-		DataCommunicator communicator = new SocketDriver();
+		DataCommunicator communicator = new SocketChannelDriver();
+//		DataCommunicator communicator = new SocketDriver();
 		ConfigurationValues configurationValues = new SocketConfiguration();
 		
 		configurationValues.setParameter(Values.VariableNames.REMOTE_ADDRESS, "127.0.0.1");
@@ -66,9 +68,12 @@ public class Borrar
 		@Override
 		public void onSendingError(Instant instant, DataInterface dataInterface, byte[] data, Throwable exception)
 		{
+			PRINT_LOCK.lock();
 			System.err.println("Error de envío:");
+			System.err.println(dataInterface.getDynamicStringIdentifier());
 			System.err.println(instant);
 			System.err.println(exception.getMessage());
+			PRINT_LOCK.unlock();
 		}
 		
 		@Override
@@ -79,25 +84,34 @@ public class Borrar
 				return;
 			}
 			
+			PRINT_LOCK.lock();
 			System.err.println("Error de Recepción:");
+			System.err.println(dataInterface.getDynamicStringIdentifier());
 			System.err.println(instant);
 			System.err.println(exception.getMessage());
+			PRINT_LOCK.unlock();
 		}
 		
 		@Override
-		public void onDataSent(	Instant instant, DataInterface dataInterface, byte[] data)
+		public void onDataSent(Instant instant, DataInterface dataInterface, byte[] data)
 		{
+			PRINT_LOCK.lock();
 			System.out.println("Enviado:");
+			System.out.println(dataInterface.getDynamicStringIdentifier());
 			System.out.println(instant);
 			System.out.println(new String(data));
+			PRINT_LOCK.unlock();
 		}
 		
 		@Override
 		public void onDataReceived(Instant instant, DataInterface dataInterface, byte[] data)
 		{
-			System.out.println("Recibido");
+			PRINT_LOCK.lock();
+			System.out.println("Recibido:");
+			System.out.println(dataInterface.getDynamicStringIdentifier());
 			System.out.println(instant);
 			System.out.println(new String(data));	
+			PRINT_LOCK.unlock();
 		}
 	}
 	
@@ -106,35 +120,43 @@ public class Borrar
 		@Override
 		public void onDisconnect(Instant instant, DataInterface dataInterface)
 		{
-			System.out.println("Desconectado");
-			System.out.println(instant);
+			PRINT_LOCK.lock();
+			System.out.println("Desconectado:");
 			System.out.println(dataInterface.getDynamicStringIdentifier());
+			System.out.println(instant);
+			PRINT_LOCK.unlock();
 		}
 
 		@Override
 		public void onConnect(Instant instant, DataInterface dataInterface)
 		{
-			System.out.println("Conectado");
-			System.out.println(instant);
+			PRINT_LOCK.lock();
+			System.out.println("Conectado:");
 			System.out.println(dataInterface.getDynamicStringIdentifier());
+			System.out.println(instant);
+			PRINT_LOCK.unlock();
 		}
 
 		@Override
 		public void onConnectError(Instant instant, DataInterface dataInterface, Throwable throwable)
 		{
+			PRINT_LOCK.lock();
 			System.err.println("Error de conexión:");
-			System.err.println(instant);
 			System.err.println(dataInterface.getDynamicStringIdentifier());
+			System.err.println(instant);
 			System.err.println(throwable.getMessage());
+			PRINT_LOCK.unlock();
 		}
 
 		@Override
 		public void onDisconnectError(Instant instant, DataInterface dataInterface, Throwable throwable)
 		{
+			PRINT_LOCK.lock();
 			System.err.println("Error de desconexión:");
-			System.err.println(instant);
 			System.err.println(dataInterface.getDynamicStringIdentifier());
+			System.err.println(instant);
 			System.err.println(throwable.getMessage());
+			PRINT_LOCK.unlock();
 		}
 	}
 }
