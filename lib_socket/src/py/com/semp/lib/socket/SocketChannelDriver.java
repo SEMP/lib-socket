@@ -18,9 +18,10 @@ import java.util.function.Consumer;
 
 import py.com.semp.lib.socket.configuration.SocketConfiguration;
 import py.com.semp.lib.socket.configuration.Values;
+import py.com.semp.lib.socket.exceptions.DataReaderSetException;
 import py.com.semp.lib.socket.internal.MessageUtil;
 import py.com.semp.lib.socket.internal.Messages;
-import py.com.semp.lib.utilidades.communication.DefaultDataReader;
+import py.com.semp.lib.socket.readers.SocketChannelDataReader;
 import py.com.semp.lib.utilidades.communication.ShutdownHookAction;
 import py.com.semp.lib.utilidades.communication.interfaces.DataCommunicator;
 import py.com.semp.lib.utilidades.communication.interfaces.DataInterface;
@@ -81,7 +82,7 @@ public class SocketChannelDriver implements DataCommunicator
 	private volatile boolean shuttingDown = false;
 	private volatile boolean stopping = false;
 	private ByteBuffer readBuffer;
-	private volatile DataReader dataReader;
+	private volatile SocketChannelDataReader dataReader;
 	
 	/**
 	 * Constructs a new {@code SocketChannelDriver} instance by opening a new socket channel.
@@ -1167,8 +1168,14 @@ public class SocketChannelDriver implements DataCommunicator
 		return this.dataListeners;
 	}
 	
+	/**
+	 * Retrieves the {@link SocketChannelDataReader} associated with this driver.
+	 * If the data reader is not already created, this method initializes it in a thread-safe manner.
+	 * 
+	 * @return The existing or newly created {@link SocketChannelDataReader} for this driver.
+	 */
 	@Override
-	public DataReader getDataReader()
+	public SocketChannelDataReader getDataReader()
 	{
 		if(this.dataReader == null)
 		{
@@ -1178,9 +1185,7 @@ public class SocketChannelDriver implements DataCommunicator
 			{
 				if(this.dataReader == null)
 				{
-					//TODO cambiar de reader.
-					//					this.dataReader = new SocketChannelDataReader(this);
-					this.dataReader = new DefaultDataReader<>(this);
+					this.dataReader = new SocketChannelDataReader(this);
 				}
 			}
 			finally
@@ -1190,6 +1195,39 @@ public class SocketChannelDriver implements DataCommunicator
 		}
 		
 		return this.dataReader;
+	}
+	
+	/**
+	 * Sets the {@link SocketChannelDataReader} for this driver. If a data reader is already set,
+	 * this method throws a {@link DataReaderSetException}.
+	 * 
+	 * This method is thread-safe and ensures that the data reader is set only once.
+	 * 
+	 * @param dataReader The {@link SocketChannelDataReader} to be associated with this driver.
+	 * @return This {@link SocketChannelDriver} instance, allowing for method chaining.
+	 * @throws DataReaderSetException if a data reader is already set for this driver.
+	 */
+	public SocketChannelDriver setDataReader(SocketChannelDataReader dataReader) throws DataReaderSetException
+	{
+		this.socketLock.lock();
+		
+		try
+		{
+			if(this.dataReader != null)
+			{
+				String errorMessage = MessageUtil.getMessage(Messages.DATA_READER_ALREADY_SET_ERROR, this.getDynamicStringIdentifier());
+				
+				throw new DataReaderSetException(errorMessage);
+			}
+			
+			this.dataReader = dataReader;
+		}
+		finally
+		{
+			this.socketLock.unlock();
+		}
+		
+		return this;
 	}
 	
 	@Override
