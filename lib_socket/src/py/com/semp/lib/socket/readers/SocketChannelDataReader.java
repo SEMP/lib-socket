@@ -1,20 +1,21 @@
 package py.com.semp.lib.socket.readers;
 
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 import py.com.semp.lib.socket.SocketChannelDriver;
-import py.com.semp.lib.socket.SocketDriver;
 import py.com.semp.lib.socket.internal.MessageUtil;
 import py.com.semp.lib.socket.internal.Messages;
 import py.com.semp.lib.utilidades.communication.interfaces.DataInterface;
@@ -53,7 +54,7 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 		
 		this.addSocketChannelDriver(socketChannelDriver);
 	}
-
+	
 	private void addSocketChannelDriver(SocketChannelDriver socketChannelDriver)
 	{
 		if(this.shuttingDown || this.stopping)
@@ -123,7 +124,7 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 		
 		while(true)
 		{
-			if(this.shuttingDown)
+			if(this.shutdownCheck())
 			{
 				return;
 			}
@@ -160,6 +161,120 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 		this.completeReading();
 	}
 	
+	private void readWithTimeout() throws CommunicationException
+	{
+		Selector selector = this.getSelector();
+		
+		int readyChannels = 0;
+		
+		try
+		{
+			readyChannels = selector.selectNow();
+		}
+		catch(IOException e)
+		{
+			String methodName = "Selector SocketChannelDataReader::readWithTimeout()";
+			
+			String errorMessage = MessageUtil.getMessage(Messages.SELECTING_CHANNEL_ERROR, methodName);
+			
+			throw new CommunicationException(errorMessage, e);
+		}
+		
+		if(readyChannels > 0)
+		{
+			Set<SelectionKey> selectedKeys = selector.selectedKeys();
+			
+			Iterator<SelectionKey> iterator = selectedKeys.iterator();
+			
+			while(iterator.hasNext())
+			{
+				if(this.shutdownCheck())
+				{
+					return;
+				}
+				
+				SelectionKey key = iterator.next();
+				
+				if(key.isReadable())
+				{
+					try
+					{
+						this.readKey(key);
+					}
+					catch(CommunicationException e)
+					{
+						LOGGER.debug(e);
+					}
+				}
+				
+				iterator.remove();
+			}
+		}
+	}
+
+	private void readKey(SelectionKey key) throws CommunicationException
+	{
+		byte[] data = new byte[] {};
+		
+		SelectableChannel socketChannel = key.channel();
+		
+		SocketChannelDriver socketChannelDriver = this.channelMap.get(socketChannel);
+		
+		Integer readTimeoutMS = this.getConfiguration(socketChannelDriver, Values.VariableNames.READ_TIMEOUT_MS, Values.Defaults.READ_TIMEOUT_MS);
+		
+		long readTimeoutNanos = TimeUnit.MICROSECONDS.toNanos(readTimeoutMS);
+		
+		long start = System.nanoTime();
+		
+		do
+		{
+			if(this.shutdownCheck())
+			{
+				return;
+			}
+			
+			long current = System.nanoTime();
+			
+			if(readTimeoutNanos >= 0 && (current - start > readTimeoutNanos))
+			{
+				String errorMessage = MessageUtil.getMessage(Messages.READING_TIMOUT_ERROR, socketChannelDriver.getConfigurationValues().toString());
+				
+				CommunicationTimeoutException exception = new CommunicationTimeoutException(errorMessage);
+				
+				socketChannelDriver.informOnReceivingError(exception);
+				
+				break;
+			}
+			
+			try
+			{
+				data = socketChannelDriver.readData();
+			}
+			catch(CommunicationException e)
+			{
+				socketChannelDriver.disconnect();
+			}
+			
+		}while(data.length == 0);
+	}
+	
+	private boolean shutdownCheck()
+	{
+		if(this.shuttingDown)
+		{
+			return true;
+		}
+		
+		if(Thread.currentThread().isInterrupted())
+		{
+			this.shutdown();
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
 	private void completeReading()
 	{
 		try
@@ -169,7 +284,6 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 				try
 				{
 					socketChannelDriver.disconnect();
-					
 				}
 				catch(CommunicationException e)
 				{
@@ -201,50 +315,24 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 		}
 	}
 	
-//	/**
-//	 * Attempts to read data with a specified timeout. If data is not received within the timeout period, 
-//	 * a CommunicationTimeoutException is thrown. This method repeatedly tries to read data until it is successful 
-//	 * or the timeout is exceeded.
-//	 *
-//	 * @param readTimeoutMS the maximum time in miliseconds to wait for data to be read
-//	 * @return the read data as a byte array
-//	 * @throws CommunicationException if there is an issue with reading the data or a timeout occurs
-//	 */
-	private byte[] readWithTimeout() throws CommunicationException
+	/**
+	 * Retrieves a configuration value for a given name. If the value is not set, it returns the provided default value.
+	 * This method uses the configuration values from the data receiver to get the setting.
+	 *
+	 * @param name the name of the configuration to retrieve
+	 * @param defaultValue the default value to return if the configuration is not set
+	 * @return the value of the configuration, or the default value if not set
+	 */
+	private <C> C getConfiguration(DataInterface dataReceiver, String name, C defaultValue)
 	{
-		//TODO cuidar shutdown y stop y timeouts
-		byte[] data;
+		ConfigurationValues configurationValues = dataReceiver.getConfigurationValues();
 		
-		Selector selector = this.getSelector();
-		
-		do
+		if(configurationValues == null)
 		{
-			int readyChannels = selector.select(readTimeoutMS);
-			
-			if(readyChannels == 0)
-			{
-				String errorMessage = MessageUtil.getMessage(Messages.READING_TIMOUT_ERROR, this.getConfigurationValues().toString());
-				
-				CommunicationTimeoutException exception = new CommunicationTimeoutException(errorMessage);
-				
-				this.dataReceiver.informOnReceivingError(exception);
-				
-				continue;
-			}
-			
-			Set<SelectionKey> selectedKeys = selector.selectedKeys();
-			
-			for(SelectionKey key : selectedKeys)
-			{
-				
-			}
-			
-			data = this.dataReceiver.readData();
-			
+			return defaultValue;
 		}
-		while(data.length == 0);
 		
-		return data;
+		return configurationValues.getValue(name, defaultValue);
 	}
 	
 	private void setThreadName()
