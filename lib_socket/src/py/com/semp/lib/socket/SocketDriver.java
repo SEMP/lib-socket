@@ -667,9 +667,18 @@ public class SocketDriver implements DataCommunicator
 		
 		try
 		{
-			this.stopping = true;
+			boolean socketClosed = false;
 			
-			if(this.closeSocket())
+			try
+			{
+				socketClosed = this.closeSocket();
+			}
+			finally
+			{
+				this.stopping = true;
+			}
+			
+			if(socketClosed)
 			{
 				this.informOnDisconnect();
 			}
@@ -752,7 +761,7 @@ public class SocketDriver implements DataCommunicator
 	 */
 	private boolean closeSocket() throws IOException
 	{
-		if(this.socket != null && !this.socket.isClosed() && this.isConnected())
+		if(this.isConnected())
 		{
 			this.connected = false;
 			

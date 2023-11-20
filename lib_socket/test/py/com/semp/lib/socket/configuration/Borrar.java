@@ -3,7 +3,7 @@ package py.com.semp.lib.socket.configuration;
 import java.time.Instant;
 import java.util.concurrent.locks.ReentrantLock;
 
-import py.com.semp.lib.socket.SocketChannelDriver;
+import py.com.semp.lib.socket.SocketDriver;
 import py.com.semp.lib.utilidades.communication.interfaces.DataCommunicator;
 import py.com.semp.lib.utilidades.communication.interfaces.DataInterface;
 import py.com.semp.lib.utilidades.communication.interfaces.DataReader;
@@ -18,8 +18,8 @@ public class Borrar
 	private static final ReentrantLock PRINT_LOCK = new ReentrantLock();
 	public static void main(String[] args) throws CommunicationException
 	{
-		DataCommunicator communicator = new SocketChannelDriver();
-//		DataCommunicator communicator = new SocketDriver();
+//		DataCommunicator communicator = new SocketChannelDriver();
+		DataCommunicator communicator = new SocketDriver();
 		ConfigurationValues configurationValues = new SocketConfiguration();
 		
 		configurationValues.setParameter(Values.VariableNames.REMOTE_ADDRESS, "127.0.0.1");
