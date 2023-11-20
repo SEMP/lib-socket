@@ -16,13 +16,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 import py.com.semp.lib.socket.SocketChannelDriver;
+import py.com.semp.lib.socket.configuration.Values;
 import py.com.semp.lib.socket.internal.MessageUtil;
 import py.com.semp.lib.socket.internal.Messages;
 import py.com.semp.lib.utilidades.communication.interfaces.DataInterface;
 import py.com.semp.lib.utilidades.communication.interfaces.DataReader;
 import py.com.semp.lib.utilidades.communication.listeners.ConnectionEventListener;
 import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
-import py.com.semp.lib.utilidades.configuration.Values;
 import py.com.semp.lib.utilidades.exceptions.CommunicationException;
 import py.com.semp.lib.utilidades.exceptions.CommunicationTimeoutException;
 import py.com.semp.lib.utilidades.log.Logger;
@@ -41,7 +41,7 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 	private volatile AtomicBoolean threadNameUpdated = new AtomicBoolean(false);
 	private final ReentrantLock lock = new ReentrantLock();
 	
-	private static final Logger LOGGER = LoggerManager.getLogger(Values.Constants.UTILITIES_CONTEXT);
+	private static final Logger LOGGER = LoggerManager.getLogger(Values.Constants.SOCKET_CONTEXT);
 	
 	public SocketChannelDataReader()
 	{
@@ -155,6 +155,7 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 			else
 			{
 				this.reading = false;
+				this.pollDelay();
 			}
 		}
 		
@@ -163,6 +164,13 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 	
 	private void readWithTimeout() throws CommunicationException
 	{
+		if(this.channelMap.size() <= 0) //TODO ver como parar el reader.
+		{
+			this.stopReading();
+			
+			return;
+		}
+		
 		Selector selector = this.getSelector();
 		
 		int readyChannels = 0;
@@ -209,6 +217,10 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 				
 				iterator.remove();
 			}
+		}
+		else
+		{
+			this.pollDelay();
 		}
 	}
 
@@ -625,6 +637,20 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 		}
 		
 		LOGGER.debug(errorMessage, throwable);
+	}
+	
+	private void pollDelay()
+	{
+		int milliseconds = Values.Constants.POLL_DELAY_MS;
+		
+		try
+		{
+			Thread.sleep(milliseconds);
+		}
+		catch(InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+		}
 	}
 	
 	/**
