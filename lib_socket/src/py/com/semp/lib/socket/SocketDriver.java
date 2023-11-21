@@ -51,11 +51,13 @@ public class SocketDriver implements DataCommunicator
 	private final CopyOnWriteArraySet<ConnectionEventListener> connectionEventListeners = new CopyOnWriteArraySet<>();
 	private final ExecutorService executorService = Executors.newFixedThreadPool(Values.Constants.SOCKET_LISTENERS_THREAD_POOL_SIZE, new NamedThreadFactory(LISTENERS_THREAD_NAME));
 	private final ReentrantLock socketLock = new ReentrantLock();
+//	private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	private volatile boolean shuttingDown = false;
 	private volatile boolean stopping = false;
 	private volatile boolean connected = false;
 	private byte[] readBuffer;
 	private volatile DataReader dataReader;
+	private int pollDelayMS = Values.Defaults.POLL_DELAY_MS;
 	
 	public SocketDriver() throws CommunicationException
 	{
@@ -108,6 +110,7 @@ public class SocketDriver implements DataCommunicator
 			throw new NullPointerException(errorMessage);
 		}
 		
+//		this.rwLock.writeLock().lock();
 		this.socketLock.lock();
 		
 		try
@@ -116,6 +119,7 @@ public class SocketDriver implements DataCommunicator
 		}
 		finally
 		{
+//			this.rwLock.writeLock().unlock();
 			this.socketLock.unlock();
 		}
 	}
@@ -255,6 +259,8 @@ public class SocketDriver implements DataCommunicator
 		
 		this.configurationValues = (SocketConfiguration)configurationValues;
 		
+		this.pollDelayMS = this.getConfiguration(Values.VariableNames.POLL_DELAY_MS, Values.Defaults.POLL_DELAY_MS);
+		
 		return this;
 	}
 	
@@ -347,6 +353,7 @@ public class SocketDriver implements DataCommunicator
 			throw exception;
 		}
 		
+//		this.rwLock.writeLock().lock();
 		this.socketLock.lock();
 		
 		try
@@ -366,7 +373,7 @@ public class SocketDriver implements DataCommunicator
 			
 			byte[] dataBuffer = this.getReadBuffer();
 			
-			int bytesRead = inputStream.read(dataBuffer);;
+			int bytesRead = inputStream.read(dataBuffer);
 			
 			if(bytesRead == -1)
 			{
@@ -381,7 +388,7 @@ public class SocketDriver implements DataCommunicator
 			
 			if(dataBuffer != null && bytesRead > 0)
 			{
-				byte[] data = ArrayUtils.subArray(dataBuffer, 0, bytesRead);;
+				byte[] data = ArrayUtils.subArray(dataBuffer, 0, bytesRead);
 				
 				this.informOnDataReceived(data);
 				
@@ -416,7 +423,9 @@ public class SocketDriver implements DataCommunicator
 		}
 		finally
 		{
+//			this.rwLock.writeLock().unlock();
 			this.socketLock.unlock();
+			this.pollDelay();
 		}
 		
 		return new byte[]{};
@@ -471,6 +480,8 @@ public class SocketDriver implements DataCommunicator
 			return this;
 		}
 		
+//		this.rwLock.readLock().lock();
+//		this.rwLock.writeLock().lock();
 		this.socketLock.lock();
 		
 		try
@@ -514,6 +525,8 @@ public class SocketDriver implements DataCommunicator
 		}
 		finally
 		{
+//			this.rwLock.readLock().unlock();
+//			this.rwLock.writeLock().unlock();
 			this.socketLock.unlock();
 		}
 		
@@ -523,6 +536,7 @@ public class SocketDriver implements DataCommunicator
 	@Override
 	public SocketDriver connect() throws CommunicationException
 	{
+//		this.rwLock.writeLock().lock();
 		this.socketLock.lock();
 		
 		try
@@ -576,6 +590,7 @@ public class SocketDriver implements DataCommunicator
 		}
 		finally
 		{
+//			this.rwLock.writeLock().unlock();
 			this.socketLock.unlock();
 		}
 		
@@ -663,6 +678,7 @@ public class SocketDriver implements DataCommunicator
 	@Override
 	public SocketDriver disconnect() throws CommunicationException
 	{
+//		this.rwLock.writeLock().lock();
 		this.socketLock.lock();
 		
 		try
@@ -717,6 +733,7 @@ public class SocketDriver implements DataCommunicator
 		}
 		finally
 		{
+//			this.rwLock.writeLock().unlock();
 			this.socketLock.unlock();
 		}
 		
@@ -729,7 +746,8 @@ public class SocketDriver implements DataCommunicator
 		this.shuttingDown = true;
 		this.connected = false;
 		
-		this.socketLock.lock();
+//		this.rwLock.writeLock().lock();
+//		this.socketLock.lock();
 		
 		try
 		{
@@ -745,7 +763,8 @@ public class SocketDriver implements DataCommunicator
 		}
 		finally
 		{
-			this.socketLock.unlock();
+//			this.rwLock.writeLock().unlock();
+//			this.socketLock.unlock();
 		}
 		
 		return this;
@@ -1107,11 +1126,24 @@ public class SocketDriver implements DataCommunicator
 		return this.dataListeners;
 	}
 	
+	private void pollDelay()
+	{
+		try
+		{
+			Thread.sleep(this.pollDelayMS);
+		}
+		catch(InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+		}
+	}
+	
 	@Override
 	public DataReader getDataReader()
 	{
 		if(this.dataReader == null)
 		{
+//			this.rwLock.writeLock().lock();
 			this.socketLock.lock();
 			
 			try
@@ -1123,6 +1155,7 @@ public class SocketDriver implements DataCommunicator
 			}
 			finally
 			{
+//				this.rwLock.writeLock().lock();
 				this.socketLock.unlock();
 			}
 		}

@@ -33,6 +33,7 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 	private Selector selector;
 	private Map<SocketChannel, SocketChannelDriver> channelMap = new ConcurrentHashMap<>();
 	
+	private int pollDelayMS = Values.Utilities.Defaults.POLL_DELAY_MS;
 	private volatile boolean pauseReading = false;
 	private volatile boolean reading = false;
 	private volatile boolean readingComplete = false;
@@ -644,13 +645,21 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 		LOGGER.debug(errorMessage, throwable);
 	}
 	
+	public void setPollDelayMS(int pollDelayMS)
+	{
+		this.pollDelayMS = pollDelayMS;
+	}
+	
+	public int getPollDelayMS()
+	{
+		return this.pollDelayMS;
+	}
+	
 	private void pollDelay()
 	{
-		int milliseconds = Values.Constants.POLL_DELAY_MS;
-		
 		try
 		{
-			Thread.sleep(milliseconds);
+			Thread.sleep(this.pollDelayMS);
 		}
 		catch(InterruptedException e)
 		{

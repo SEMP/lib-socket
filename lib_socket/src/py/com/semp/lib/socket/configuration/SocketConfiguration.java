@@ -20,6 +20,7 @@ public class SocketConfiguration extends ConfigurationValues
 		this.addRequiredParameter(Integer.class, WRITE_TIMEOUT_MS);
 		this.addOptionalParameter(Integer.class, SOCKET_BUFFER_SIZE_BYTES);
 		this.addOptionalParameter(Integer.class, TERMINATION_TIMOUT_MS);
+		this.addOptionalParameter(Integer.class, POLL_DELAY_MS);
 	}
 	
 	@Override
@@ -38,5 +39,7 @@ public class SocketConfiguration extends ConfigurationValues
 		this.setParameter(Integer.class, WRITE_TIMEOUT_MS, Values.Defaults.WRITE_TIMEOUT_MS);
 		this.setParameter(Integer.class, SOCKET_BUFFER_SIZE_BYTES, Values.Defaults.SOCKET_BUFFER_SIZE_BYTES);
 		this.setParameter(Integer.class, TERMINATION_TIMOUT_MS, Values.Defaults.TERMINATION_TIMOUT_MS);
+		this.setParameter(Integer.class, POLL_DELAY_MS, Values.Utilities.Defaults.POLL_DELAY_MS);
+		
 	}
 }

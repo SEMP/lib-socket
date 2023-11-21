@@ -7,6 +7,7 @@ import py.com.semp.lib.socket.SocketChannelDriver;
 import py.com.semp.lib.utilidades.communication.interfaces.DataCommunicator;
 import py.com.semp.lib.utilidades.communication.interfaces.DataInterface;
 import py.com.semp.lib.utilidades.communication.interfaces.DataReader;
+import py.com.semp.lib.utilidades.communication.interfaces.DataTransmitter;
 import py.com.semp.lib.utilidades.communication.listeners.ConnectionEventListener;
 import py.com.semp.lib.utilidades.communication.listeners.DataListener;
 import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
@@ -113,6 +114,20 @@ public class Borrar
 			System.out.println(instant);
 			System.out.println(new String(data));	
 			PRINT_LOCK.unlock();
+			
+			if(dataInterface instanceof DataTransmitter)
+			{
+				DataTransmitter dataTransmitter = (DataTransmitter) dataInterface;
+				
+				try
+				{
+					dataTransmitter.sendData(data);
+				}
+				catch(CommunicationException e)
+				{
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 	

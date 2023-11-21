@@ -20,11 +20,6 @@ public interface Values
 		 */
 		public static final int SOCKET_LISTENERS_THREAD_POOL_SIZE = 10;
 		
-		/**
-		 * Time delay for polls.
-		 */
-		public static final int POLL_DELAY_MS = 50;
-		
 		//String values
 		/**
 		 * Context name for the socket library
@@ -87,6 +82,11 @@ public interface Values
 		 */
 		public static final String TERMINATION_TIMOUT_MS = "terminationTimeoutMS";
 		
+		/**
+		 * Time delay for polls.
+		 */
+		public static final String POLL_DELAY_MS = "pollDelayMS";
+		
 		// String Variables Names
 		/**
 		 * The address of the remote host.
@@ -117,6 +117,7 @@ public interface Values
 		public static final Integer WRITE_TIMEOUT_MS = -1;
 		public static final Integer SOCKET_BUFFER_SIZE_BYTES = 1024 * 2;
 		public static final Integer TERMINATION_TIMOUT_MS = Utilities.Constants.TERMINATION_TIMOUT_MS;
+		public static final Integer POLL_DELAY_MS = Utilities.Defaults.POLL_DELAY_MS;
 	}
 	
 	/**

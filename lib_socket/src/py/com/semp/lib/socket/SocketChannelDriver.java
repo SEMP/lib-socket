@@ -71,6 +71,7 @@ public class SocketChannelDriver implements DataCommunicator
 	private static final String LISTENERS_THREAD_NAME = "SocketChannelDriverListeners";
 	private static final Logger LOGGER = LoggerManager.getLogger(Values.Constants.SOCKET_CONTEXT);
 	
+	private int pollDelayMS = Values.Defaults.POLL_DELAY_MS;
 	private SocketChannel socketChannel;
 	private volatile String stringIdentifier;
 	private final Thread shutdownHook = new Thread(new ShutdownHookAction(this));
@@ -328,6 +329,8 @@ public class SocketChannelDriver implements DataCommunicator
 		this.checkConfigurationValues(configurationValues);
 		
 		this.configurationValues = (SocketConfiguration)configurationValues;
+		
+		this.pollDelayMS = this.getConfiguration(Values.VariableNames.POLL_DELAY_MS, Values.Defaults.POLL_DELAY_MS);
 		
 		return this;
 	}
@@ -738,7 +741,7 @@ public class SocketChannelDriver implements DataCommunicator
 					
 					try
 					{
-						Thread.sleep(Values.Constants.POLL_DELAY_MS);
+						Thread.sleep(this.pollDelayMS);
 					}
 					catch(InterruptedException e)
 					{
