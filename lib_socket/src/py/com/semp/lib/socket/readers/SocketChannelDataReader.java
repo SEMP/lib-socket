@@ -129,6 +129,11 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 				return;
 			}
 			
+			if(this.channelMap.size() <= 0)
+			{
+				this.stopReading();
+			}
+			
 			if(this.stopping)
 			{
 				break;
@@ -164,13 +169,6 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 	
 	private void readWithTimeout() throws CommunicationException
 	{
-		if(this.channelMap.size() <= 0) //TODO ver como parar el reader.
-		{
-			this.stopReading();
-			
-			return;
-		}
-		
 		Selector selector = this.getSelector();
 		
 		int readyChannels = 0;
@@ -240,7 +238,7 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 		
 		do
 		{
-			if(this.shutdownCheck())
+			if(this.shutdownCheck() || !socketChannelDriver.isConnected())
 			{
 				return;
 			}
@@ -483,6 +481,11 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 			return;
 		}
 		
+		this.removeSocketChannelDriver(dataInterface);
+	}
+
+	private void removeSocketChannelDriver(DataInterface dataInterface)
+	{
 		if(dataInterface instanceof SocketChannelDriver)
 		{
 			SocketChannelDriver socketChannelDriver = (SocketChannelDriver)dataInterface;
@@ -620,6 +623,8 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 		}
 		
 		LOGGER.debug(errorMessage, throwable);
+		
+		this.removeSocketChannelDriver(dataInterface);
 	}
 	
 	@Override
