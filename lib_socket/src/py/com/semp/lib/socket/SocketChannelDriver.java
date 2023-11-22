@@ -821,8 +821,6 @@ public class SocketChannelDriver implements DataCommunicator
 	{
 		this.shuttingDown = true;
 		
-		this.socketLock.lock();
-		
 		try
 		{
 			this.executorService.shutdownNow();
@@ -834,10 +832,6 @@ public class SocketChannelDriver implements DataCommunicator
 			String errorMessage = MessageUtil.getMessage(Messages.SHUTDOWN_ERROR, this.getDynamicStringIdentifier());
 			
 			throw new CommunicationException(errorMessage, e);
-		}
-		finally
-		{
-			this.socketLock.unlock();
 		}
 		
 		return this;

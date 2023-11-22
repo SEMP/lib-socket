@@ -746,9 +746,6 @@ public class SocketDriver implements DataCommunicator
 		this.shuttingDown = true;
 		this.connected = false;
 		
-//		this.rwLock.writeLock().lock();
-//		this.socketLock.lock();
-		
 		try
 		{
 			this.executorService.shutdownNow();
@@ -760,11 +757,6 @@ public class SocketDriver implements DataCommunicator
 			String errorMessage = MessageUtil.getMessage(Messages.SHUTDOWN_ERROR, this.getDynamicStringIdentifier());
 			
 			throw new CommunicationException(errorMessage, e);
-		}
-		finally
-		{
-//			this.rwLock.writeLock().unlock();
-//			this.socketLock.unlock();
 		}
 		
 		return this;
