@@ -1,4 +1,4 @@
-package py.com.semp.lib.socket;
+package py.com.semp.lib.socket.drivers;
 
 import java.io.IOException;
 import java.net.InetAddress;

@@ -1,4 +1,4 @@
-package py.com.semp.lib.socket;
+package py.com.semp.lib.socket.drivers;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,7 +51,6 @@ public class SocketDriver implements DataCommunicator
 	private final CopyOnWriteArraySet<ConnectionEventListener> connectionEventListeners = new CopyOnWriteArraySet<>();
 	private final ExecutorService executorService = Executors.newFixedThreadPool(Values.Constants.SOCKET_LISTENERS_THREAD_POOL_SIZE, new NamedThreadFactory(LISTENERS_THREAD_NAME));
 	private final ReentrantLock socketLock = new ReentrantLock();
-//	private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
 	private volatile boolean shuttingDown = false;
 	private volatile boolean stopping = false;
 	private volatile boolean connected = false;
@@ -110,7 +109,6 @@ public class SocketDriver implements DataCommunicator
 			throw new NullPointerException(errorMessage);
 		}
 		
-//		this.rwLock.writeLock().lock();
 		this.socketLock.lock();
 		
 		try
@@ -119,7 +117,6 @@ public class SocketDriver implements DataCommunicator
 		}
 		finally
 		{
-//			this.rwLock.writeLock().unlock();
 			this.socketLock.unlock();
 		}
 	}
@@ -353,7 +350,6 @@ public class SocketDriver implements DataCommunicator
 			throw exception;
 		}
 		
-//		this.rwLock.writeLock().lock();
 		this.socketLock.lock();
 		
 		try
@@ -423,7 +419,6 @@ public class SocketDriver implements DataCommunicator
 		}
 		finally
 		{
-//			this.rwLock.writeLock().unlock();
 			this.socketLock.unlock();
 			this.pollDelay();
 		}
@@ -480,8 +475,6 @@ public class SocketDriver implements DataCommunicator
 			return this;
 		}
 		
-//		this.rwLock.readLock().lock();
-//		this.rwLock.writeLock().lock();
 		this.socketLock.lock();
 		
 		try
@@ -525,8 +518,6 @@ public class SocketDriver implements DataCommunicator
 		}
 		finally
 		{
-//			this.rwLock.readLock().unlock();
-//			this.rwLock.writeLock().unlock();
 			this.socketLock.unlock();
 		}
 		
@@ -536,7 +527,6 @@ public class SocketDriver implements DataCommunicator
 	@Override
 	public SocketDriver connect() throws CommunicationException
 	{
-//		this.rwLock.writeLock().lock();
 		this.socketLock.lock();
 		
 		try
@@ -590,7 +580,6 @@ public class SocketDriver implements DataCommunicator
 		}
 		finally
 		{
-//			this.rwLock.writeLock().unlock();
 			this.socketLock.unlock();
 		}
 		
@@ -678,7 +667,6 @@ public class SocketDriver implements DataCommunicator
 	@Override
 	public SocketDriver disconnect() throws CommunicationException
 	{
-//		this.rwLock.writeLock().lock();
 		this.socketLock.lock();
 		
 		try
@@ -733,7 +721,6 @@ public class SocketDriver implements DataCommunicator
 		}
 		finally
 		{
-//			this.rwLock.writeLock().unlock();
 			this.socketLock.unlock();
 		}
 		
@@ -1135,7 +1122,6 @@ public class SocketDriver implements DataCommunicator
 	{
 		if(this.dataReader == null)
 		{
-//			this.rwLock.writeLock().lock();
 			this.socketLock.lock();
 			
 			try
@@ -1147,7 +1133,6 @@ public class SocketDriver implements DataCommunicator
 			}
 			finally
 			{
-//				this.rwLock.writeLock().lock();
 				this.socketLock.unlock();
 			}
 		}

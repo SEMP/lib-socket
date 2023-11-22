@@ -15,8 +15,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
-import py.com.semp.lib.socket.SocketChannelDriver;
 import py.com.semp.lib.socket.configuration.Values;
+import py.com.semp.lib.socket.drivers.SocketChannelDriver;
 import py.com.semp.lib.socket.internal.MessageUtil;
 import py.com.semp.lib.socket.internal.Messages;
 import py.com.semp.lib.utilidades.communication.interfaces.DataInterface;
