@@ -26,7 +26,6 @@ public class ClientSocketConfiguration extends ConfigurationValues
 	@Override
 	protected void setOptionalParameters()
 	{
-		this.addOptionalParameter(String.class, NETWORK_INTERFACE);
 		this.addOptionalParameter(String.class, LOCAL_ADDRESS);
 		this.addOptionalParameter(Integer.class, LOCAL_PORT);
 	}

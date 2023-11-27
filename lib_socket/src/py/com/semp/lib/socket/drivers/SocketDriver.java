@@ -533,7 +533,7 @@ public class SocketDriver implements DataCommunicator
 		{
 			if(this.shuttingDown)
 			{
-				String methodName = "SocketChannelDriver SocketChannelDriver::connect()";
+				String methodName = "SocketDriver SocketDriver::connect()";
 				
 				String errorMessage = MessageUtil.getMessage(Messages.TASK_SHUTDOWN_ERROR, methodName);
 				
@@ -563,6 +563,31 @@ public class SocketDriver implements DataCommunicator
 			String address = this.configurationValues.getValue(Values.VariableNames.REMOTE_ADDRESS);
 			int port = this.configurationValues.getValue(Values.VariableNames.REMOTE_PORT);
 			int connectionTimeoutMS = this.configurationValues.getValue(Values.VariableNames.CONNECTION_TIMEOUT_MS);
+			String localAddress = this.configurationValues.getValue(Values.VariableNames.LOCAL_ADDRESS);
+			Integer localPort = this.configurationValues.getValue(Values.VariableNames.LOCAL_PORT);
+			
+			if(localAddress != null || localPort != null)
+			{
+				try
+				{
+					localAddress = localAddress != null ? localAddress : "0.0.0.0";
+					localPort = localPort != null ? localPort : 0;
+					
+					this.socket.bind(new InetSocketAddress(localAddress, localPort));
+				}
+				catch(IOException e)
+				{
+					String errorMessage = MessageUtil.getMessage(Messages.BINDING_ERROR, this.configurationValues.toString());
+					
+					CommunicationException exception = new CommunicationException(errorMessage, e);
+					
+					this.informOnConnectError(exception);
+					
+					this.stopping = true;
+					
+					throw exception;
+				}
+			}
 			
 			this.waitConnection(new InetSocketAddress(address, port), connectionTimeoutMS);
 			
