@@ -3,9 +3,9 @@ package py.com.semp.lib.socket.configuration;
 import static py.com.semp.lib.socket.configuration.Values.VariableNames.*;
 import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
 
-public class SocketConfiguration extends ConfigurationValues
+public class ClientSocketConfiguration extends ConfigurationValues
 {
-	public SocketConfiguration()
+	public ClientSocketConfiguration()
 	{
 		super();
 	}
@@ -40,6 +40,5 @@ public class SocketConfiguration extends ConfigurationValues
 		this.setParameter(Integer.class, SOCKET_BUFFER_SIZE_BYTES, Values.Defaults.SOCKET_BUFFER_SIZE_BYTES);
 		this.setParameter(Integer.class, TERMINATION_TIMOUT_MS, Values.Defaults.TERMINATION_TIMOUT_MS);
 		this.setParameter(Integer.class, POLL_DELAY_MS, Values.Utilities.Defaults.POLL_DELAY_MS);
-		
 	}
 }

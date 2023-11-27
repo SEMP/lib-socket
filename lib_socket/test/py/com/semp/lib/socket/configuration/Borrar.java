@@ -22,7 +22,7 @@ public class Borrar
 	{
 //		DataCommunicator communicator = new SocketChannelDriver();
 		DataCommunicator communicator = new SocketDriver();
-		ConfigurationValues configurationValues = new SocketConfiguration();
+		ConfigurationValues configurationValues = new ClientSocketConfiguration();
 		
 		configurationValues.setParameter(Values.VariableNames.REMOTE_ADDRESS, "127.0.0.1");
 		configurationValues.setParameter(Values.VariableNames.REMOTE_PORT, 8789);

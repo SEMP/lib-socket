@@ -15,12 +15,12 @@ import org.junit.jupiter.api.Test;
 
 public class SocketConfigurationTest
 {
-	private SocketConfiguration socketConfiguration;
+	private ClientSocketConfiguration socketConfiguration;
 	
 	@BeforeEach
 	public void setUp()
 	{
-		this.socketConfiguration = new SocketConfiguration();
+		this.socketConfiguration = new ClientSocketConfiguration();
 	}
 	
 	@Test

@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
-import py.com.semp.lib.socket.configuration.SocketConfiguration;
+import py.com.semp.lib.socket.configuration.ClientSocketConfiguration;
 import py.com.semp.lib.socket.configuration.Values;
 import py.com.semp.lib.socket.internal.MessageUtil;
 import py.com.semp.lib.socket.internal.Messages;
@@ -46,7 +46,7 @@ public class SocketDriver implements DataCommunicator
 	private Socket socket;
 	private volatile String stringIdentifier;
 	private final Thread shutdownHook = new Thread(new ShutdownHookAction(this));
-	private SocketConfiguration configurationValues;
+	private ClientSocketConfiguration configurationValues;
 	private final CopyOnWriteArraySet<DataListener> dataListeners = new CopyOnWriteArraySet<>();
 	private final CopyOnWriteArraySet<ConnectionEventListener> connectionEventListeners = new CopyOnWriteArraySet<>();
 	private final ExecutorService executorService = Executors.newFixedThreadPool(Values.Constants.SOCKET_LISTENERS_THREAD_POOL_SIZE, new NamedThreadFactory(LISTENERS_THREAD_NAME));
@@ -254,7 +254,7 @@ public class SocketDriver implements DataCommunicator
 	{
 		this.checkConfigurationValues(configurationValues);
 		
-		this.configurationValues = (SocketConfiguration)configurationValues;
+		this.configurationValues = (ClientSocketConfiguration)configurationValues;
 		
 		this.pollDelayMS = this.getConfiguration(Values.VariableNames.POLL_DELAY_MS, Values.Defaults.POLL_DELAY_MS);
 		
@@ -270,9 +270,9 @@ public class SocketDriver implements DataCommunicator
 	 */
 	private void checkConfigurationValues(ConfigurationValues configurationValues) throws CommunicationException
 	{
-		if(!(configurationValues instanceof SocketConfiguration))
+		if(!(configurationValues instanceof ClientSocketConfiguration))
 		{
-			String requiredClassName = SocketConfiguration.class.getName();
+			String requiredClassName = ClientSocketConfiguration.class.getName();
 			String currentClassName = this.getClass().getName();
 			
 			String errorMessage = MessageUtil.getMessage(Messages.WRONG_CONFIGURATION_OBJECT_ERROR, requiredClassName, currentClassName);
@@ -289,7 +289,7 @@ public class SocketDriver implements DataCommunicator
 	}
 	
 	@Override
-	public SocketConfiguration getConfigurationValues()
+	public ClientSocketConfiguration getConfigurationValues()
 	{
 		return this.configurationValues;
 	}
@@ -606,7 +606,7 @@ public class SocketDriver implements DataCommunicator
 	}
 	
 	/**
-	 * Attempts to connect to the specified address and port using a new {@link SocketConfiguration}.
+	 * Attempts to connect to the specified address and port using a new {@link ClientSocketConfiguration}.
 	 * The method configures the remote address and port to connect to, and delegates the actual
 	 * connection process to the {@code connect} method that takes a {@link ConfigurationValues} parameter.
 	 *
@@ -617,7 +617,7 @@ public class SocketDriver implements DataCommunicator
 	 */
 	public SocketDriver connect(String address, int port) throws CommunicationException
 	{
-		SocketConfiguration configurationValues = new SocketConfiguration();
+		ClientSocketConfiguration configurationValues = new ClientSocketConfiguration();
 		
 		configurationValues.setParameter(Values.VariableNames.REMOTE_ADDRESS, address);
 		configurationValues.setParameter(Values.VariableNames.REMOTE_PORT, port);
