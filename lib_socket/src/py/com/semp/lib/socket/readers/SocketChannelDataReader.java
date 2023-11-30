@@ -25,6 +25,7 @@ import py.com.semp.lib.utilidades.communication.listeners.ConnectionEventListene
 import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
 import py.com.semp.lib.utilidades.exceptions.CommunicationException;
 import py.com.semp.lib.utilidades.exceptions.CommunicationTimeoutException;
+import py.com.semp.lib.utilidades.exceptions.ShutdownException;
 import py.com.semp.lib.utilidades.log.Logger;
 import py.com.semp.lib.utilidades.log.LoggerManager;
 
@@ -408,7 +409,7 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 	}
 	
 	@Override
-	public void shutdown()
+	public SocketChannelDataReader shutdown()
 	{
 		this.shuttingDown = true;
 		
@@ -436,7 +437,7 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 			{
 				socketChannelDriver.shutdown();
 			}
-			catch(CommunicationException e)
+			catch(ShutdownException e)
 			{
 				String methodName = "void SocketChannelDataReader::shutdown()";
 				String errorMessage = MessageUtil.getMessage(Messages.SHUTDOWN_ERROR, methodName);
@@ -455,6 +456,8 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 		{
 			LOGGER.error(e);
 		}
+		
+		return this;
 	}
 	
 	private void closeSelector(Selector selector, String methodName) throws CommunicationException

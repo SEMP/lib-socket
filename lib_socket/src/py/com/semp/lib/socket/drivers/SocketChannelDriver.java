@@ -22,7 +22,6 @@ import py.com.semp.lib.socket.exceptions.DataReaderSetException;
 import py.com.semp.lib.socket.internal.MessageUtil;
 import py.com.semp.lib.socket.internal.Messages;
 import py.com.semp.lib.socket.readers.SocketChannelDataReader;
-import py.com.semp.lib.utilidades.communication.ShutdownHookAction;
 import py.com.semp.lib.utilidades.communication.interfaces.DataCommunicator;
 import py.com.semp.lib.utilidades.communication.interfaces.DataInterface;
 import py.com.semp.lib.utilidades.communication.interfaces.DataReader;
@@ -34,8 +33,10 @@ import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
 import py.com.semp.lib.utilidades.exceptions.CommunicationException;
 import py.com.semp.lib.utilidades.exceptions.CommunicationTimeoutException;
 import py.com.semp.lib.utilidades.exceptions.ConnectionClosedException;
+import py.com.semp.lib.utilidades.exceptions.ShutdownException;
 import py.com.semp.lib.utilidades.log.Logger;
 import py.com.semp.lib.utilidades.log.LoggerManager;
+import py.com.semp.lib.utilidades.shutdown.ShutdownHookAction;
 import py.com.semp.lib.utilidades.utilities.ArrayUtils;
 import py.com.semp.lib.utilidades.utilities.NamedThreadFactory;
 
@@ -826,7 +827,7 @@ public class SocketChannelDriver implements DataCommunicator
 			{
 				this.shutdown();
 			}
-			catch(CommunicationException e1)
+			catch(ShutdownException e1)
 			{
 				exception.addSuppressed(e1);
 			}
@@ -842,7 +843,7 @@ public class SocketChannelDriver implements DataCommunicator
 	}
 	
 	@Override
-	public SocketChannelDriver shutdown() throws CommunicationException
+	public SocketChannelDriver shutdown() throws ShutdownException
 	{
 		this.shuttingDown = true;
 		
@@ -856,7 +857,7 @@ public class SocketChannelDriver implements DataCommunicator
 		{
 			String errorMessage = MessageUtil.getMessage(Messages.SHUTDOWN_ERROR, this.getDynamicStringIdentifier());
 			
-			throw new CommunicationException(errorMessage, e);
+			throw new ShutdownException(errorMessage, e);
 		}
 		
 		return this;
