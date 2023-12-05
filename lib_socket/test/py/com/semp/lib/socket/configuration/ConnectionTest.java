@@ -14,7 +14,7 @@ import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
 import py.com.semp.lib.utilidades.exceptions.CommunicationException;
 import py.com.semp.lib.utilidades.exceptions.ConnectionClosedException;
 
-public class Borrar
+public class ConnectionTest
 {
 	private static final ReentrantLock PRINT_LOCK = new ReentrantLock();
 	
@@ -68,20 +68,20 @@ public class Borrar
 	private static class MyDataListener implements DataListener
 	{
 		@Override
-		public void onSendingError(Instant instant, DataInterface dataInterface, byte[] data, Throwable exception)
+		public void onSendingError(Instant instant, DataInterface dataInterface, byte[] data, Throwable throwable)
 		{
 			PRINT_LOCK.lock();
 			System.err.println("Error de envío:");
 			System.err.println(dataInterface.getDynamicStringIdentifier());
 			System.err.println(instant);
-			System.err.println(exception.getMessage());
+			System.err.println(throwable.getMessage());
 			PRINT_LOCK.unlock();
 		}
 		
 		@Override
-		public void onReceivingError(Instant instant, DataInterface dataInterface, Throwable exception)
+		public void onReceivingError(Instant instant, DataInterface dataInterface, Throwable throwable)
 		{
-			if(exception instanceof ConnectionClosedException)
+			if(throwable instanceof ConnectionClosedException)
 			{
 				return;
 			}
@@ -90,7 +90,7 @@ public class Borrar
 			System.err.println("Error de Recepción:");
 			System.err.println(dataInterface.getDynamicStringIdentifier());
 			System.err.println(instant);
-			System.err.println(exception.getMessage());
+			System.err.println(throwable.getMessage());
 			PRINT_LOCK.unlock();
 		}
 		

@@ -993,52 +993,52 @@ public class SocketChannelDriver implements DataCommunicator
 	}
 	
 	@Override
-	public SocketChannelDriver informOnConnectError(Throwable exception)
+	public SocketChannelDriver informOnConnectError(Throwable throwable)
 	{
 		String methodName = "SocketChannelDriver SocketChannelDriver::informOnConnectError(Throwable)";
 		
 		this.notifyListeners(methodName, this.connectionEventListeners, (listener) ->
 		{
-			listener.onConnectError(Instant.now(), this, exception);
+			listener.onConnectError(Instant.now(), this, throwable);
 		});
 		
 		return this;
 	}
 	
 	@Override
-	public SocketChannelDriver informOnDisconnectError(Throwable exception)
+	public SocketChannelDriver informOnDisconnectError(Throwable throwable)
 	{
 		String methodName = "void SocketChannelDriver::informOnDisconnectError(Throwable)";
 		
 		this.notifyListeners(methodName, this.connectionEventListeners, (listener) ->
 		{
-			listener.onDisconnectError(Instant.now(), this, exception);
+			listener.onDisconnectError(Instant.now(), this, throwable);
 		});
 		
 		return this;
 	}
 	
 	@Override
-	public SocketChannelDriver informOnSendingError(byte[] data, Throwable exception)
+	public SocketChannelDriver informOnSendingError(byte[] data, Throwable throwable)
 	{
 		String methodName = "SocketChannelDriver SocketChannelDriver::informOnSendingError(byte[], Throwable)";
 		
 		this.notifyListeners(methodName, this.dataListeners, (listener) ->
 		{
-			listener.onSendingError(Instant.now(), this, data, exception);
+			listener.onSendingError(Instant.now(), this, data, throwable);
 		});
 		
 		return this;
 	}
 	
 	@Override
-	public SocketChannelDriver informOnReceivingError(Throwable exception)
+	public SocketChannelDriver informOnReceivingError(Throwable throwable)
 	{
 		String methodName = "SocketChannelDriver SocketChannelDriver::informOnReceivingError(Throwable)";
 		
 		this.notifyListeners(methodName, this.dataListeners, (listener) ->
 		{
-			listener.onReceivingError(Instant.now(), this, exception);
+			listener.onReceivingError(Instant.now(), this, throwable);
 		});
 		
 		return this;

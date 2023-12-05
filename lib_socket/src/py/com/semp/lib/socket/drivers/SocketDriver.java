@@ -933,52 +933,52 @@ public class SocketDriver implements DataCommunicator
 	}
 	
 	@Override
-	public SocketDriver informOnConnectError(Throwable exception)
+	public SocketDriver informOnConnectError(Throwable throwable)
 	{
 		String methodName = "SocketDriver SocketDriver::informOnConnectError(Throwable)";
 		
 		this.notifyListeners(methodName, this.connectionEventListeners, (listener) ->
 		{
-			listener.onConnectError(Instant.now(), this, exception);
+			listener.onConnectError(Instant.now(), this, throwable);
 		});
 		
 		return this;
 	}
 	
 	@Override
-	public SocketDriver informOnDisconnectError(Throwable exception)
+	public SocketDriver informOnDisconnectError(Throwable throwable)
 	{
 		String methodName = "SocketDriver SocketDriver::informOnDisconnectError(Throwable)";
 		
 		this.notifyListeners(methodName, this.connectionEventListeners, (listener) ->
 		{
-			listener.onDisconnectError(Instant.now(), this, exception);
+			listener.onDisconnectError(Instant.now(), this, throwable);
 		});
 		
 		return this;
 	}
 	
 	@Override
-	public SocketDriver informOnSendingError(byte[] data, Throwable exception)
+	public SocketDriver informOnSendingError(byte[] data, Throwable throwable)
 	{
 		String methodName = "SocketDriver SocketChannelDriver::informOnSendingError(byte[], Throwable)";
 		
 		this.notifyListeners(methodName, this.dataListeners, (listener) ->
 		{
-			listener.onSendingError(Instant.now(), this, data, exception);
+			listener.onSendingError(Instant.now(), this, data, throwable);
 		});
 		
 		return this;
 	}
 	
 	@Override
-	public SocketDriver informOnReceivingError(Throwable exception)
+	public SocketDriver informOnReceivingError(Throwable throwable)
 	{
 		String methodName = "SocketDriver SocketDriver::informOnReceivingError(Throwable)";
 		
 		this.notifyListeners(methodName, this.dataListeners, (listener) ->
 		{
-			listener.onReceivingError(Instant.now(), this, exception);
+			listener.onReceivingError(Instant.now(), this, throwable);
 		});
 		
 		return this;
