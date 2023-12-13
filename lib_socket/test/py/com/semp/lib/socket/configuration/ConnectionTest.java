@@ -13,6 +13,7 @@ import py.com.semp.lib.utilidades.communication.listeners.DataListener;
 import py.com.semp.lib.utilidades.configuration.ConfigurationValues;
 import py.com.semp.lib.utilidades.exceptions.CommunicationException;
 import py.com.semp.lib.utilidades.exceptions.ConnectionClosedException;
+import py.com.semp.lib.utilidades.utilities.Utilities;
 
 public class ConnectionTest
 {
@@ -73,7 +74,7 @@ public class ConnectionTest
 			PRINT_LOCK.lock();
 			System.err.println("Error de envío:");
 			System.err.println(dataInterface.getDynamicStringIdentifier());
-			System.err.println(instant);
+			System.err.println(Utilities.toString(instant));
 			System.err.println(throwable.getMessage());
 			PRINT_LOCK.unlock();
 		}
@@ -89,7 +90,7 @@ public class ConnectionTest
 			PRINT_LOCK.lock();
 			System.err.println("Error de Recepción:");
 			System.err.println(dataInterface.getDynamicStringIdentifier());
-			System.err.println(instant);
+			System.err.println(Utilities.toString(instant));
 			System.err.println(throwable.getMessage());
 			PRINT_LOCK.unlock();
 		}
@@ -100,7 +101,7 @@ public class ConnectionTest
 			PRINT_LOCK.lock();
 			System.out.println("Enviado:");
 			System.out.println(dataInterface.getDynamicStringIdentifier());
-			System.out.println(instant);
+			System.out.println(Utilities.toString(instant));
 			System.out.println(new String(data));
 			PRINT_LOCK.unlock();
 		}
@@ -111,7 +112,7 @@ public class ConnectionTest
 			PRINT_LOCK.lock();
 			System.out.println("Recibido:");
 			System.out.println(dataInterface.getDynamicStringIdentifier());
-			System.out.println(instant);
+			System.out.println(Utilities.toString(instant));
 			System.out.println(new String(data));	
 			PRINT_LOCK.unlock();
 			
@@ -139,7 +140,7 @@ public class ConnectionTest
 			PRINT_LOCK.lock();
 			System.out.println("Desconectado:");
 			System.out.println(dataInterface.getDynamicStringIdentifier());
-			System.out.println(instant);
+			System.out.println(Utilities.toString(instant));
 			PRINT_LOCK.unlock();
 		}
 
@@ -149,7 +150,7 @@ public class ConnectionTest
 			PRINT_LOCK.lock();
 			System.out.println("Conectado:");
 			System.out.println(dataInterface.getDynamicStringIdentifier());
-			System.out.println(instant);
+			System.out.println(Utilities.toString(instant));
 			System.out.println();
 			PRINT_LOCK.unlock();
 		}
@@ -160,7 +161,7 @@ public class ConnectionTest
 			PRINT_LOCK.lock();
 			System.err.println("Error de conexión:");
 			System.err.println(dataInterface.getDynamicStringIdentifier());
-			System.err.println(instant);
+			System.err.println(Utilities.toString(instant));
 			System.err.println(throwable.getMessage());
 			PRINT_LOCK.unlock();
 		}
@@ -171,7 +172,7 @@ public class ConnectionTest
 			PRINT_LOCK.lock();
 			System.err.println("Error de desconexión:");
 			System.err.println(dataInterface.getDynamicStringIdentifier());
-			System.err.println(instant);
+			System.err.println(Utilities.toString(instant));
 			System.err.println(throwable.getMessage());
 			PRINT_LOCK.unlock();
 		}

@@ -28,6 +28,7 @@ import py.com.semp.lib.utilidades.exceptions.CommunicationTimeoutException;
 import py.com.semp.lib.utilidades.exceptions.ShutdownException;
 import py.com.semp.lib.utilidades.log.Logger;
 import py.com.semp.lib.utilidades.log.LoggerManager;
+import py.com.semp.lib.utilidades.utilities.Utilities;
 
 public class SocketChannelDataReader implements DataReader, ConnectionEventListener
 {
@@ -687,7 +688,7 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 	{
 		StringBuilder sb = new StringBuilder();
 		
-		sb.append(Instant.now()).append(": ");
+		sb.append(Utilities.toString(Instant.now())).append(": ");
 		sb.append(dataInterface.getDynamicStringIdentifier());
 		
 		return sb.toString();
