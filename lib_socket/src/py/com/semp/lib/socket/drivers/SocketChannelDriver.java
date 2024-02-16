@@ -139,7 +139,14 @@ public class SocketChannelDriver implements DataCommunicator
 	 */
 	private void addShutdownHook()
 	{
-		Runtime.getRuntime().addShutdownHook(this.shutdownHook);
+		try
+		{
+			Runtime.getRuntime().addShutdownHook(this.shutdownHook);
+		}
+		catch(IllegalStateException | IllegalArgumentException e)
+		{
+			LOGGER.error(e);
+		}
 	}
 	
 	/**
@@ -149,7 +156,14 @@ public class SocketChannelDriver implements DataCommunicator
 	 */
 	private void removeShutdownHook()
 	{
-		Runtime.getRuntime().removeShutdownHook(this.shutdownHook);
+		try
+		{
+			Runtime.getRuntime().removeShutdownHook(this.shutdownHook);
+		}
+		catch(IllegalStateException | IllegalArgumentException e)
+		{
+			LOGGER.error(e);
+		}
 	}
 	
 	/**
