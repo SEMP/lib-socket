@@ -25,6 +25,7 @@ import py.com.semp.lib.socket.internal.MessageUtil;
 import py.com.semp.lib.socket.internal.Messages;
 import py.com.semp.lib.utilidades.communication.DefaultDataReader;
 import py.com.semp.lib.utilidades.communication.interfaces.DataCommunicator;
+import py.com.semp.lib.utilidades.communication.interfaces.DataInterface;
 import py.com.semp.lib.utilidades.communication.interfaces.DataReader;
 import py.com.semp.lib.utilidades.communication.listeners.ConnectionEventListener;
 import py.com.semp.lib.utilidades.communication.listeners.DataListener;
@@ -663,6 +664,99 @@ public class SocketDriver implements DataCommunicator
 		configurationValues.setParameter(Values.VariableNames.REMOTE_PORT, port);
 		
 		return this.connect(configurationValues);
+	}
+	
+	@Override
+	public DataInterface requestReconnect() throws CommunicationException
+	{
+		this.socketLock.lock();
+		
+		try
+		{
+			boolean socketClosed = false;
+			
+			IOException suppressedException = null;
+			
+			try
+			{
+				try
+				{
+					this.socket.shutdownOutput();
+					this.socket.shutdownInput();
+				}
+				catch(IOException e)
+				{
+					suppressedException = e;
+				}
+				
+				this.socket.close();
+			}
+			catch(IOException e)
+			{
+				if(suppressedException != null)
+				{
+					e.addSuppressed(suppressedException);
+				}
+				
+				String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTION_ERROR, this.getDynamicStringIdentifier());
+				
+				CommunicationException exception = new CommunicationException(errorMessage, e);
+				
+				this.informOnDisconnectError(exception);
+				
+				throw exception;
+			}
+			
+			if(socketClosed)
+			{
+				this.informOnDisconnect();
+			}
+			
+			this.socket = new Socket();
+			
+			String address = this.configurationValues.getValue(Values.VariableNames.REMOTE_ADDRESS);
+			int port = this.configurationValues.getValue(Values.VariableNames.REMOTE_PORT);
+			int connectionTimeoutMS = this.configurationValues.getValue(Values.VariableNames.CONNECTION_TIMEOUT_MS);
+			String localAddress = this.configurationValues.getValue(Values.VariableNames.LOCAL_ADDRESS);
+			Integer localPort = this.configurationValues.getValue(Values.VariableNames.LOCAL_PORT);
+			
+			if(localAddress != null || localPort != null)
+			{
+				try
+				{
+					localAddress = localAddress != null ? localAddress : "0.0.0.0";
+					localPort = localPort != null ? localPort : 0;
+					
+					this.socket.bind(new InetSocketAddress(localAddress, localPort));
+				}
+				catch(IOException e)
+				{
+					String errorMessage = MessageUtil.getMessage(Messages.BINDING_ERROR, this.configurationValues.toString());
+					
+					CommunicationException exception = new CommunicationException(errorMessage, e);
+					
+					this.informOnConnectError(exception);
+					
+					this.stopping = true;
+					
+					throw exception;
+				}
+			}
+			
+			this.waitConnection(new InetSocketAddress(address, port), connectionTimeoutMS);
+			
+			this.stringIdentifier = null;
+			
+			this.getDynamicStringIdentifier();
+			
+			this.informOnConnect();
+		}
+		finally
+		{
+			this.socketLock.unlock();
+		}
+		
+		return this;
 	}
 	
 	/**

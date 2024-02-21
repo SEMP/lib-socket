@@ -741,6 +741,101 @@ public class SocketChannelDriver implements DataCommunicator
 		return this.connect(configurationValues);
 	}
 	
+	@Override
+	public DataInterface requestReconnect() throws CommunicationException
+	{
+		this.socketLock.lock();
+		
+		try
+		{
+			if(this.socketChannel != null && this.socketChannel.isOpen())
+			{
+				try
+				{
+					this.socketChannel.close();
+				}
+				catch(IOException e)
+				{
+					String errorMessage = MessageUtil.getMessage(Messages.DISCONNECTION_ERROR, this.getDynamicStringIdentifier());
+					
+					CommunicationException exception = new CommunicationException(errorMessage, e);
+					
+					this.informOnDisconnectError(exception);
+					
+					throw exception;
+				}
+				
+				this.informOnDisconnect();
+			}
+			
+			this.socketChannel = SocketChannel.open();
+			
+			String address = this.configurationValues.getValue(Values.VariableNames.REMOTE_ADDRESS);
+			int port = this.configurationValues.getValue(Values.VariableNames.REMOTE_PORT);
+			int connectionTimeoutMS = this.configurationValues.getValue(Values.VariableNames.CONNECTION_TIMEOUT_MS);
+			long connectionTimeoutNanos = TimeUnit.MILLISECONDS.toNanos(connectionTimeoutMS);
+			String localAddress = this.configurationValues.getValue(Values.VariableNames.LOCAL_ADDRESS);
+			Integer localPort = this.configurationValues.getValue(Values.VariableNames.LOCAL_PORT);
+			
+			if(localAddress != null || localPort != null)
+			{
+				try
+				{
+					localAddress = localAddress != null ? localAddress : "0.0.0.0";
+					localPort = localPort != null ? localPort : 0;
+					
+					this.socketChannel.bind(new InetSocketAddress(localAddress, localPort));
+				}
+				catch(IOException e)
+				{
+					String errorMessage = MessageUtil.getMessage(Messages.BINDING_ERROR, this.configurationValues.toString());
+					
+					CommunicationException exception = new CommunicationException(errorMessage, e);
+					
+					this.informOnConnectError(exception);
+					
+					this.stopping = true;
+					
+					throw exception;
+				}
+			}
+			
+			this.socketChannel.configureBlocking(false);
+			
+			this.waitConnection(new InetSocketAddress(address, port), connectionTimeoutNanos);
+			
+			this.getDynamicStringIdentifier();
+			
+			this.informOnConnect();
+		}
+		catch(IOException e)
+		{
+			String errorMessage = MessageUtil.getMessage(Messages.CONNECTION_ERROR, this.configurationValues.toString());
+			
+			CommunicationException exception = new CommunicationException(errorMessage, e);
+			
+			this.informOnConnectError(exception);
+			
+			this.stopping = true;
+			
+			throw exception;
+		}
+		catch(CommunicationException e)
+		{
+			this.informOnConnectError(e);
+			
+			this.stopping = true;
+			
+			throw e;
+		}
+		finally
+		{
+			this.socketLock.unlock();
+		}
+		
+		return this;
+	}
+	
 	/**
 	 * Waits for a connection to be established with a remote address within a certain timeout.
 	 * This method initiates a non-blocking connect operation and periodically checks if the
