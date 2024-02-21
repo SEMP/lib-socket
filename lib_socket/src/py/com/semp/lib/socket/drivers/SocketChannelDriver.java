@@ -744,6 +744,8 @@ public class SocketChannelDriver implements DataCommunicator
 	@Override
 	public DataInterface requestReconnect() throws CommunicationException
 	{
+		//FIXME corregir registro en data reader.
+		/*
 		this.socketLock.lock();
 		
 		try
@@ -832,7 +834,7 @@ public class SocketChannelDriver implements DataCommunicator
 		{
 			this.socketLock.unlock();
 		}
-		
+		*/
 		return this;
 	}
 	

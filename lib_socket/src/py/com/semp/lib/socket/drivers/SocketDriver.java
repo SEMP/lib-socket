@@ -669,6 +669,8 @@ public class SocketDriver implements DataCommunicator
 	@Override
 	public DataInterface requestReconnect() throws CommunicationException
 	{
+		//FIXME corregir funcionalidad.
+		/*
 		this.socketLock.lock();
 		
 		try
@@ -755,7 +757,7 @@ public class SocketDriver implements DataCommunicator
 		{
 			this.socketLock.unlock();
 		}
-		
+		*/
 		return this;
 	}
 	
