@@ -235,7 +235,7 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 		
 		Integer readTimeoutMS = this.getConfiguration(socketChannelDriver, Values.VariableNames.READ_TIMEOUT_MS, Values.Defaults.READ_TIMEOUT_MS);
 		
-		long readTimeoutNanos = TimeUnit.MICROSECONDS.toNanos(readTimeoutMS);
+		long readTimeoutNanos = TimeUnit.MILLISECONDS.toNanos(readTimeoutMS);
 		
 		long start = System.nanoTime();
 		

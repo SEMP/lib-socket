@@ -1150,7 +1150,7 @@ public class SocketDriver implements DataCommunicator
 	{
 		if(listeners == null)
 		{
-			String methodName = "SocketDriver SocketDriver::removeConnectionEveaddConnectionEventListeners(ConnectionEventListener...)";
+			String methodName = "SocketDriver SocketDriver::addConnectionEventListeners(ConnectionEventListener...)";
 			
 			String errorMessage = MessageUtil.getMessage(Messages.NULL_VALUES_NOT_ALLOWED_ERROR, methodName);
 			

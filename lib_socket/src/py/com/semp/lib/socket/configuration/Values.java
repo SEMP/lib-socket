@@ -73,7 +73,7 @@ public interface Values
 		public static final String WRITE_TIMEOUT_MS = "writeTimeoutMS";
 		
 		/**
-		 * The time the socket will block during a read operation before throwing an exception.<br>
+		 * The buffer size (in bytes) used by the socket during read/write operations.<br>
 		 */
 		public static final String SOCKET_BUFFER_SIZE_BYTES = "socketBufferSizeBytes";
 		
