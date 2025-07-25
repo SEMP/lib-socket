@@ -282,7 +282,7 @@ public class SocketChannelDriver implements DataCommunicator
 			
 			if(remoteAddress == null || localAddress == null)
 			{
-				String pendingText = Values.Utilities.Constants.PENDING_VAULE;
+				String pendingText = Values.Utilities.Constants.PENDING_VALUE;
 				
 				String localAddressText = localAddress == null ? pendingText : getAddressString(localAddress);
 				String remoteAddressText = remoteAddress == null ? pendingText : getAddressString(remoteAddress);
