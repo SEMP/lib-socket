@@ -410,7 +410,7 @@ public class SocketChannelDataReader implements DataReader, ConnectionEventListe
 	}
 	
 	@Override
-	public boolean isShuttingdown()
+	public boolean isShuttingDown()
 	{
 		return this.shuttingDown;
 	}

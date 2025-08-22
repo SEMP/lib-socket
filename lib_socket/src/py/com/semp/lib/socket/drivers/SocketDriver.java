@@ -1296,7 +1296,7 @@ public class SocketDriver implements DataCommunicator
 	}
 	
 	@Override
-	public boolean isShuttingdown()
+	public boolean isShuttingDown()
 	{
 		return this.shuttingDown;
 	}
