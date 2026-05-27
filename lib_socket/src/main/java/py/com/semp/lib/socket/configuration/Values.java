@@ -36,7 +36,7 @@ public interface Values
 		/**
 		 * Path where the messages for localization are found.
 		 */
-		public static final String MESSAGES_PATH = "/py/com/semp/lib/socket/";
+		public static final String MESSAGES_PATH = "py.com.semp.lib.socket.";
 	}
 	
 	/**

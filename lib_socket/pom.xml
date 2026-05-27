@@ -6,7 +6,7 @@
 
 	<groupId>py.com.semp</groupId>
 	<artifactId>lib.socket</artifactId>
-	<version>2.1.1</version>
+	<version>2.1.2</version>
 	<packaging>jar</packaging>
 
 	<name>lib-socket</name>
@@ -15,7 +15,7 @@
 	<properties>
 		<maven.compiler.release>17</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<lib.utilidades.version>2.1.1</lib.utilidades.version>
+		<lib.utilidades.version>2.1.2</lib.utilidades.version>
 		<junit.version>5.9.3</junit.version>
 	</properties>
 

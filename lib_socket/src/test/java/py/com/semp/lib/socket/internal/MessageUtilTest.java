@@ -16,39 +16,24 @@ class MessageUtilTest
 	@Test
 	void testResource()
 	{
-		String name = Values.Constants.MESSAGES_PATH + Values.Resources.MESSAGES_BASE_NAME + ".properties";
-		
+		String name = "/" + Values.Constants.MESSAGES_PATH.replace('.', '/') + Values.Resources.MESSAGES_BASE_NAME + ".properties";
+
 		URL resource = this.getClass().getResource(name);
-		
+
 		assertNotNull(resource, name);
 	}
-	
+
 	@Test
 	void testResourceBundle()
 	{
 		ResourceBundle bundle = ResourceBundle.getBundle
 		(
-			"py/com/semp/lib/socket/messages",
+			"py.com.semp.lib.socket.messages",
 			Locale.getDefault()
 		);
-		
+
 		String message = bundle.getString("REQUIRED_CONFIGURATION_VALUE_NOT_FOUND_ERROR");
-		
-		assertNotNull(message);
-	}
-	
-	@Test
-	void testResourceBundle2()
-	{
-		ResourceBundle bundle = ResourceBundle.getBundle
-		(
-			"/py/com/semp/lib/socket/messages",
-			Locale.getDefault(),
-			Thread.currentThread().getContextClassLoader()
-		);
-		
-		String message = bundle.getString("REQUIRED_CONFIGURATION_VALUE_NOT_FOUND_ERROR");
-		
+
 		assertNotNull(message);
 	}
 	
